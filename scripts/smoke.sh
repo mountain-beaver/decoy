@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Smoke test: start the app, wait until its window reports that it rendered
-# and that the commands answer, take a screenshot, check the report.
+# and that the commands answer, take a screenshot, check the report. Then start
+# it once more, type into a field and close the window in the same instant: the
+# edit must be on disk afterwards.
 #
 #   scripts/smoke.sh <path to the decoy binary> [output directory]
 #
@@ -22,7 +24,8 @@ case "$os" in
 esac
 # Start with a filled profile so the screenshot shows the editor, not the first-run screen.
 mkdir -p "$cfg"
-[ -e "$cfg/profiles.json" ] || cp "$here/smoke-profile.json" "$cfg/profiles.json"
+seeded=0
+[ -e "$cfg/profiles.json" ] || { cp "$here/smoke-profile.json" "$cfg/profiles.json"; seeded=1; }
 
 report="$out/report.json"
 rm -f "$report"
@@ -65,12 +68,29 @@ esac
 wait "$pid"
 code=$?
 
+# Only with the sample profile: this run changes the profile's display name.
+saved=skipped
+if [ "$seeded" = 1 ]; then
+  unset DECOY_SMOKE
+  DECOY_SMOKE_EDIT=1 "$bin" > "$out/close.log" 2>&1 &
+  pid=$!
+  for _ in $(seq 1 60); do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 1
+  done
+  kill "$pid" 2>/dev/null
+  wait "$pid" 2>/dev/null
+  if grep -q 'typed right before closing' "$cfg/profiles.json"; then saved=yes; else saved=no; fi
+fi
+
 # Linux: the window started the tray daemon; stop the one this run started.
 for d in $(pgrep -x decoy-daemon 2>/dev/null); do
   case " $daemons_before " in *" $d "*) ;; *) kill "$d" 2>/dev/null ;; esac
 done
 
 echo "exit code: $code"
+echo "edit made right before closing was saved: $saved"
 echo "report: $(cat "$report" 2>/dev/null || echo missing)"
 [ -s "$out/app.log" ] && { echo "--- app log"; tail -n 30 "$out/app.log"; }
-[ "$code" = 0 ] && grep -q '"ok":true' "$report" 2>/dev/null
+[ -s "$out/close.log" ] && { echo "--- close test log"; tail -n 15 "$out/close.log"; }
+[ "$code" = 0 ] && [ "$saved" != no ] && grep -q '"ok":true' "$report" 2>/dev/null

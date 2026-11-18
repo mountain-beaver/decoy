@@ -19,7 +19,7 @@ pub fn isolated() -> bool {
     enabled()
         || smoke_file().is_some()
         || std::env::var_os("DECOY_DEV_QUERY").is_some()
-        || std::env::var_os("DECOY_SMOKE_EDIT").is_some()
+        || edit_test()
 }
 
 /// Where the smoke test writes its report; `None` in normal runs.
@@ -33,7 +33,7 @@ pub fn smoke_file() -> Option<std::path::PathBuf> {
 pub fn script() -> Option<&'static str> {
     if enabled() {
         Some(SCRIPT)
-    } else if std::env::var_os("DECOY_SMOKE_EDIT").is_some() {
+    } else if edit_test() {
         Some(EDIT_SCRIPT)
     } else if smoke_file().is_some() {
         Some(SMOKE_SCRIPT)
@@ -234,10 +234,15 @@ const EDIT_SCRIPT: &str = r#"
 })();
 "#;
 
+/// Whether this run is the save-on-close self-test.
+pub fn edit_test() -> bool {
+    std::env::var_os("DECOY_SMOKE_EDIT").is_some()
+}
+
 /// Self-test: ask for the window to close the way its close button does.
 #[tauri::command]
 pub fn smoke_close(window: tauri::WebviewWindow) {
-    if std::env::var_os("DECOY_SMOKE_EDIT").is_some() {
+    if edit_test() {
         let _ = window.close();
     }
 }

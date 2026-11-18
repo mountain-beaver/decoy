@@ -112,7 +112,8 @@ pub async fn check_update(
     app: AppHandle,
     be: Be<'_>,
 ) -> Result<Option<decoy_core::Update>, String> {
-    if be.state()?.settings.skip_update_check {
+    // A self-test must not depend on the network.
+    if crate::perf::isolated() || be.state()?.settings.skip_update_check {
         return Ok(None);
     }
     let cache_dir = app.path().app_cache_dir().map_err(|e| e.to_string())?;
@@ -157,6 +158,10 @@ pub fn set_os_autostart(app: &AppHandle, on: bool) -> Result<(), String> {
 
 /// The page saved its edits after a close request (see `save_before_close`).
 #[tauri::command]
-pub fn close_window(window: tauri::WebviewWindow) {
+pub fn close_window(app: AppHandle, window: tauri::WebviewWindow) {
     let _ = window.destroy();
+    // Without a window Windows and macOS stay in the tray; the self-test ends here.
+    if crate::perf::edit_test() {
+        app.exit(0);
+    }
 }
