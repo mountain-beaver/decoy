@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/decoy-core"]
+members = ["crates/decoy-core", "crates/decoy-app"]
 
 [workspace.package]
 version = "0.1.0"
