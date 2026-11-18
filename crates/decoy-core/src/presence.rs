@@ -314,11 +314,10 @@ impl Presence {
             TimestampMode::None => (None, None),
             TimestampMode::SinceConnect => (Some(ctx.connected_at_ms), None),
             TimestampMode::SinceUpdate => (Some(ctx.now_ms), None),
-            TimestampMode::LocalTime => {
-                let offset_ms = i64::from(ctx.utc_offset_secs) * 1000;
-                let local = ctx.now_ms + offset_ms;
-                (Some(local - local.rem_euclid(DAY_MS) - offset_ms), None)
-            }
+            TimestampMode::LocalTime => (
+                Some(local_day_start_ms(ctx.now_ms, ctx.utc_offset_secs)),
+                None,
+            ),
             TimestampMode::Custom { start_ms, end_ms } => (*start_ms, *end_ms),
         };
         let mut ts = Map::new();

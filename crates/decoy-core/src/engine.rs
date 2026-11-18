@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
 use crate::ipc::{Client, ConnectOptions, DiscordUser};
-use crate::presence::{Presence, TimeContext};
+use crate::presence::{local_day_start_ms, Presence, TimeContext, TimestampMode};
 use crate::util::now_ms;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -156,6 +156,8 @@ struct Worker {
     want_connected: bool,
     /// The wanted activity differs from what Discord has.
     dirty: bool,
+    /// Start of the local day the "time of day" timer on Discord counts from.
+    day_sent: Option<i64>,
     attempt: usize,
     retry_at: Instant,
 }
@@ -179,6 +181,7 @@ impl Worker {
             want: None,
             want_connected: false,
             dirty: false,
+            day_sent: None,
             attempt: 0,
             retry_at: Instant::now(),
         }
@@ -269,7 +272,25 @@ impl Worker {
         }
     }
 
+    /// Start of the current local day, if the wanted presence shows the time of day.
+    fn local_day(&self) -> Option<i64> {
+        let (p, applied) = self.want.as_ref()?;
+        if !matches!(p.timestamps, TimestampMode::LocalTime) {
+            return None;
+        }
+        let offset = self.opts.local_offset.map_or(*applied, |f| f());
+        Some(local_day_start_ms(now_ms(), offset))
+    }
+
     fn tick(&mut self) {
+        // Past midnight (or after a clock change) the timer on Discord would
+        // keep counting from yesterday: send it again.
+        if self.live.is_some() && !self.dirty {
+            let day = self.local_day();
+            if day.is_some() && day != self.day_sent {
+                self.dirty = true;
+            }
+        }
         let now = Instant::now();
         if self.live.is_none() && self.want_connected && now >= self.retry_at {
             self.connect();
@@ -338,13 +359,14 @@ impl Worker {
     }
 
     fn send(&mut self) {
+        let day = self.local_day();
+        let local_offset = self.opts.local_offset;
         let Some(l) = &mut self.live else { return };
         let activity = self.want.as_ref().map(|(p, offset)| {
-            let now = now_ms();
             p.to_activity(&TimeContext {
-                now_ms: now,
+                now_ms: now_ms(),
                 connected_at_ms: l.connected_at_ms,
-                utc_offset_secs: *offset,
+                utc_offset_secs: local_offset.map_or(*offset, |f| f()),
             })
         });
         let result = l.client.set_activity(activity.as_ref());
@@ -352,6 +374,7 @@ impl Worker {
         match result {
             Ok(()) => {
                 self.dirty = false;
+                self.day_sent = day;
                 let user = l.user.clone();
                 self.set_state(if activity.is_some() {
                     EngineState::Active { user }
@@ -392,11 +415,44 @@ mod tests {
         let opts = ConnectOptions {
             paths: Some(vec![path]),
             timeout: Duration::from_secs(5),
+            local_offset: Some(test_offset),
         };
         let e = Engine::spawn_with(opts, timing(), move |s| {
             let _ = tx.send(s);
         });
         (e, rx)
+    }
+
+    /// The "local UTC offset" the engines under test see.
+    static OFFSET: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(0);
+
+    fn test_offset() -> i32 {
+        OFFSET.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    #[test]
+    fn time_of_day_timer_follows_the_clock() {
+        let dir = tempfile::tempdir().unwrap();
+        let mock = Mock::start(dir.path(), MockConfig::default());
+        let (engine, rx) = spawn(mock.path.clone());
+        let mut p = presence("clock");
+        p.timestamps = TimestampMode::LocalTime;
+        engine.apply(p, 0);
+        wait_for(&rx, is_active);
+        let first = mock.recv_set_activity().value["args"]["activity"]["timestamps"]["start"]
+            .as_i64()
+            .unwrap();
+        // Nothing changed: no second update.
+        assert!(mock
+            .drain_set_activity(Duration::from_millis(300))
+            .is_empty());
+        // Half a day later on the local clock, the day began at another moment.
+        OFFSET.store(12 * 3600, std::sync::atomic::Ordering::SeqCst);
+        let second = mock.recv_set_activity().value["args"]["activity"]["timestamps"]["start"]
+            .as_i64()
+            .unwrap();
+        OFFSET.store(0, std::sync::atomic::Ordering::SeqCst);
+        assert_eq!((second - first).abs(), 12 * 3600 * 1000);
     }
 
     fn presence(details: &str) -> Presence {

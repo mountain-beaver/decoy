@@ -115,6 +115,11 @@ impl Controller {
             .map(|s| s.showing)
             .unwrap_or(false);
         let n = notifier.clone();
+        // Lets the "time of day" timer follow midnight and clock changes.
+        let opts = ConnectOptions {
+            local_offset: Some(local_utc_offset_secs),
+            ..opts
+        };
         let engine = Engine::spawn(opts, move |s| n.notify(Change::Engine(s)));
         Ok(Arc::new(Controller {
             store,

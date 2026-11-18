@@ -30,6 +30,10 @@ pub struct ConnectOptions {
     pub paths: Option<Vec<PathBuf>>,
     /// Read/write timeout on the socket (Unix only).
     pub timeout: Duration,
+    /// The current local UTC offset in seconds. With it the "time of day"
+    /// timer follows midnight and clock changes; without it the offset given
+    /// to `Engine::apply` is used for as long as that presence is shown.
+    pub local_offset: Option<fn() -> i32>,
 }
 
 impl Default for ConnectOptions {
@@ -37,6 +41,7 @@ impl Default for ConnectOptions {
         Self {
             paths: None,
             timeout: Duration::from_secs(10),
+            local_offset: None,
         }
     }
 }
@@ -306,6 +311,7 @@ mod tests {
         ConnectOptions {
             paths: Some(vec![m.path.clone()]),
             timeout: Duration::from_secs(5),
+            local_offset: None,
         }
     }
 
