@@ -16,7 +16,10 @@ pub fn enabled() -> bool {
 /// A test instance that must not hand over to the user's running one:
 /// the self-test, or a run with `DECOY_DEV_QUERY` (start on a given screen).
 pub fn isolated() -> bool {
-    enabled() || smoke_file().is_some() || std::env::var_os("DECOY_DEV_QUERY").is_some()
+    enabled()
+        || smoke_file().is_some()
+        || std::env::var_os("DECOY_DEV_QUERY").is_some()
+        || std::env::var_os("DECOY_SMOKE_EDIT").is_some()
 }
 
 /// Where the smoke test writes its report; `None` in normal runs.
@@ -30,6 +33,8 @@ pub fn smoke_file() -> Option<std::path::PathBuf> {
 pub fn script() -> Option<&'static str> {
     if enabled() {
         Some(SCRIPT)
+    } else if std::env::var_os("DECOY_SMOKE_EDIT").is_some() {
+        Some(EDIT_SCRIPT)
     } else if smoke_file().is_some() {
         Some(SMOKE_SCRIPT)
     } else {
@@ -205,4 +210,34 @@ pub fn smoke_report(app: AppHandle, report: String) {
         std::thread::sleep(std::time::Duration::from_secs(hold));
         app.exit(if ok { 0 } else { 1 });
     });
+}
+
+/// Self-test of saving on close (`DECOY_SMOKE_EDIT=1`): type into the first
+/// text field and ask for the window to close in the same instant, well inside
+/// the page's save delay. The caller then looks for the text in profiles.json.
+const EDIT_SCRIPT: &str = r#"
+(() => {
+  const started = Date.now();
+  const tick = () => {
+    const input = document.querySelector('.field input[type=text]');
+    if (!input || !window.__TAURI_INTERNALS__) {
+      if (Date.now() - started < 30000) setTimeout(tick, 100);
+      return;
+    }
+    setTimeout(() => {
+      input.value = 'typed right before closing';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      window.__TAURI_INTERNALS__.invoke('smoke_close');
+    }, 1500);
+  };
+  tick();
+})();
+"#;
+
+/// Self-test: ask for the window to close the way its close button does.
+#[tauri::command]
+pub fn smoke_close(window: tauri::WebviewWindow) {
+    if std::env::var_os("DECOY_SMOKE_EDIT").is_some() {
+        let _ = window.close();
+    }
 }

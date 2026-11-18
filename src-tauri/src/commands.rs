@@ -154,3 +154,9 @@ pub fn set_os_autostart(app: &AppHandle, on: bool) -> Result<(), String> {
     };
     result.map_err(|e| format!("Could not change the launch at login setting: {e}"))
 }
+
+/// The page saved its edits after a close request (see `save_before_close`).
+#[tauri::command]
+pub fn close_window(window: tauri::WebviewWindow) {
+    let _ = window.destroy();
+}

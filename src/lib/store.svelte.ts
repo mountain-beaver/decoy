@@ -123,6 +123,10 @@ class AppStore {
 
     void backend.onEngineState((s) => { this.engine = s; });
     void backend.onAppState((s) => { void this.#applyState(s); });
+    // Closing the window: write what is unsaved first, then let the window go.
+    void backend.onCloseRequest(() => {
+      void this.flush().catch(() => {}).finally(() => backend.closeWindow());
+    });
     void this.load();
   }
 

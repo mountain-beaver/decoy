@@ -243,5 +243,7 @@ export function createMock(): Backend {
     },
     async onEngineState(cb) { engineCbs.add(cb); return () => engineCbs.delete(cb); },
     async onAppState(cb) { appCbs.add(cb); return () => appCbs.delete(cb); },
+    async onCloseRequest() { return () => {}; },
+    async closeWindow() {},
   };
 }

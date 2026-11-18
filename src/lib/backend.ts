@@ -26,6 +26,9 @@ export interface Backend {
   checkUpdate(): Promise<Update | null>;
   onEngineState(cb: (s: EngineState) => void): Promise<() => void>;
   onAppState(cb: (s: AppState) => void): Promise<() => void>;
+  /** The window is about to close: save, then call `closeWindow`. */
+  onCloseRequest(cb: () => void): Promise<() => void>;
+  closeWindow(): Promise<void>;
 }
 
 function createTauri(): Backend {
@@ -50,6 +53,8 @@ function createTauri(): Backend {
     checkUpdate: () => call('check_update'),
     onEngineState: (cb) => listen<EngineState>('engine-state', (e) => cb(e.payload)),
     onAppState: (cb) => listen<AppState>('app-state', (e) => cb(e.payload)),
+    onCloseRequest: (cb) => listen('save-and-close', () => cb()),
+    closeWindow: () => call('close_window'),
   };
 }
 

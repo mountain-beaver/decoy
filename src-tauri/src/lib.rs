@@ -58,12 +58,42 @@ pub fn show_main_window(app: &AppHandle) {
             None => built,
         };
         match built.build() {
-            #[cfg(target_os = "linux")]
-            Ok(window) => linux::tune_webview(&window),
-            #[cfg(not(target_os = "linux"))]
-            Ok(_) => {}
+            Ok(window) => {
+                save_before_close(&window);
+                #[cfg(target_os = "linux")]
+                linux::tune_webview(&window);
+            }
             Err(e) => eprintln!("decoy: could not open the window: {e}"),
         }
+    });
+}
+
+/// How long the page gets to save before the window closes anyway.
+const CLOSE_GRACE: std::time::Duration = std::time::Duration::from_millis(1200);
+
+/// The page saves edits a moment after the last keystroke. Closing the window
+/// inside that moment would lose them, so a close first asks the page to save;
+/// the page answers with `close_window`. A page that does not answer is closed
+/// after [`CLOSE_GRACE`], and a second close request closes at once.
+fn save_before_close(window: &tauri::WebviewWindow) {
+    let asked = std::sync::atomic::AtomicBool::new(false);
+    let app = window.app_handle().clone();
+    window.on_window_event(move |event| {
+        let tauri::WindowEvent::CloseRequested { api, .. } = event else {
+            return;
+        };
+        if asked.swap(true, std::sync::atomic::Ordering::SeqCst) {
+            return;
+        }
+        let Some(window) = app.get_webview_window(WINDOW_LABEL) else {
+            return;
+        };
+        api.prevent_close();
+        let _ = window.emit("save-and-close", ());
+        std::thread::spawn(move || {
+            std::thread::sleep(CLOSE_GRACE);
+            let _ = window.destroy();
+        });
     });
 }
 
@@ -218,6 +248,8 @@ pub fn run() {
             commands::set_settings,
             commands::open_external,
             commands::check_update,
+            commands::close_window,
+            perf::smoke_close,
             perf::perf_report,
             perf::smoke_report,
         ])
