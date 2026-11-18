@@ -5,6 +5,7 @@ pub mod engine;
 pub mod error;
 pub mod ipc;
 pub mod presence;
+pub mod store;
 mod util;
 
 #[cfg(all(test, unix))]
@@ -17,3 +18,4 @@ pub use presence::{
     ActivityKind, Button, Field, Image, Issue, Party, Presence, StatusDisplay, TimeContext,
     TimestampMode,
 };
+pub use store::{Profile, Settings, Store};
