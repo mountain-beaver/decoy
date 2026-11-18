@@ -22,6 +22,16 @@ const ID_SHOWING: &str = "showing";
 const ID_QUIT: &str = "quit";
 const ID_PROFILE_PREFIX: &str = "profile:";
 
+/// Windows keeps 127 characters of a tray tooltip; cut on a character boundary
+/// well before that.
+fn short_tooltip(state: &DaemonState) -> String {
+    let text = tooltip(state);
+    match text.char_indices().nth(100) {
+        Some((at, _)) => format!("{}...", &text[..at]),
+        None => text,
+    }
+}
+
 fn controller(app: &AppHandle) -> Option<Arc<Controller>> {
     app.try_state::<Arc<Controller>>()
         .map(|s| s.inner().clone())
@@ -44,7 +54,12 @@ fn build_menu(app: &AppHandle, state: &DaemonState) -> tauri::Result<Menu<tauri:
         let mut sub = SubmenuBuilder::new(app, "Profiles");
         for p in &state.profiles {
             let name = p.name.trim();
-            let label = if name.is_empty() { "Untitled" } else { name };
+            // A single `&` marks a keyboard mnemonic in menu text.
+            let label = if name.is_empty() {
+                "Untitled".to_string()
+            } else {
+                name.replace('&', "&&")
+            };
             let active = state.settings.active_profile.as_deref() == Some(p.id.as_str());
             let item = CheckMenuItem::with_id(
                 app,
@@ -86,7 +101,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
     if let Some(state) = &state {
         builder = builder
             .menu(&build_menu(app, state)?)
-            .tooltip(tooltip(state));
+            .tooltip(short_tooltip(state));
     }
     builder.build(app)?;
     Ok(())
@@ -101,7 +116,7 @@ pub fn refresh(app: &AppHandle, rebuild_menu: bool) {
             return;
         };
         let state = ctrl.state();
-        let _ = tray.set_tooltip(Some(tooltip(&state)));
+        let _ = tray.set_tooltip(Some(short_tooltip(&state)));
         if rebuild_menu {
             if let Ok(menu) = build_menu(&handle, &state) {
                 let _ = tray.set_menu(Some(menu));
@@ -119,12 +134,16 @@ fn on_menu_event(app: &AppHandle, event: MenuEvent) {
             if ctrl.set_showing_external(!ctrl.is_showing()).is_err() {
                 // Nothing valid to show yet: let the user fix it in the window.
                 crate::show_main_window(app);
+                // The menu ticked the item by itself; put the real state back.
+                refresh(app, true);
             }
         }
         ID_QUIT => crate::quit(app),
         _ => {
             if let Some(profile_id) = id.strip_prefix(ID_PROFILE_PREFIX) {
-                let _ = ctrl.set_active_profile_external(profile_id);
+                if ctrl.set_active_profile_external(profile_id).is_err() {
+                    refresh(app, true);
+                }
             }
         }
     }
