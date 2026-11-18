@@ -12,6 +12,11 @@ pub mod controller;
 pub mod games;
 pub mod shell;
 
+#[cfg(unix)]
+pub mod daemon;
+#[cfg(unix)]
+pub mod rpc;
+
 pub use controller::{
     tooltip, AppState, Change, Controller, DaemonState, Notifier, MSG_FIX_FIELDS, MSG_NOT_FOUND,
     MSG_NO_PROFILE,
