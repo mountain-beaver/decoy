@@ -85,6 +85,25 @@ pub fn read_frame<R: Read>(r: &mut R) -> Result<(u32, Vec<u8>)> {
     Ok((op, payload))
 }
 
+/// The per-user temporary directory of macOS (what `TMPDIR` normally holds).
+#[cfg(target_os = "macos")]
+fn darwin_user_temp_dir() -> Option<PathBuf> {
+    use std::os::unix::ffi::OsStringExt;
+    extern "C" {
+        fn confstr(name: i32, buf: *mut std::ffi::c_char, len: usize) -> usize;
+    }
+    const CS_DARWIN_USER_TEMP_DIR: i32 = 65537;
+    let mut buf = vec![0u8; 1024];
+    // SAFETY: `buf` is writable for `buf.len()` bytes; confstr writes at most
+    // that many, NUL included, and returns the length it needed (0 on error).
+    let n = unsafe { confstr(CS_DARWIN_USER_TEMP_DIR, buf.as_mut_ptr().cast(), buf.len()) };
+    if n == 0 || n > buf.len() {
+        return None;
+    }
+    buf.truncate(n - 1);
+    Some(PathBuf::from(std::ffi::OsString::from_vec(buf)))
+}
+
 /// Candidate socket paths in the order they are tried.
 #[cfg(unix)]
 pub fn default_paths() -> Vec<PathBuf> {
@@ -105,6 +124,14 @@ pub fn default_paths() -> Vec<PathBuf> {
             if !bases.contains(&p) {
                 bases.push(p);
             }
+        }
+    }
+    // Started by launchd at login, TMPDIR may be missing; Discord's socket is
+    // in the per-user temporary directory all the same.
+    #[cfg(target_os = "macos")]
+    if let Some(p) = darwin_user_temp_dir() {
+        if !bases.contains(&p) {
+            bases.push(p);
         }
     }
     let tmp = PathBuf::from("/tmp");
