@@ -143,6 +143,20 @@ pub struct TimeContext {
     pub utc_offset_secs: i32,
 }
 
+/// The moment (Unix ms) the local day containing `now_ms` began.
+pub fn local_day_start_ms(now_ms: i64, utc_offset_secs: i32) -> i64 {
+    let offset_ms = i64::from(utc_offset_secs) * 1000;
+    let local = now_ms + offset_ms;
+    local - local.rem_euclid(DAY_MS) - offset_ms
+}
+
+/// Length the way Discord measures it. Its client checks the limits in
+/// JavaScript, where a string's length is its UTF-16 size, so an emoji counts
+/// as two.
+fn len(s: &str) -> usize {
+    s.encode_utf16().count()
+}
+
 /// Trimmed text, or `None` when empty or whitespace-only.
 fn clean(s: &Option<String>) -> Option<&str> {
     s.as_deref().map(str::trim).filter(|s| !s.is_empty())
@@ -177,7 +191,7 @@ impl Presence {
             (Field::State, "State", &self.state),
         ] {
             if let Some(v) = clean(value) {
-                if !(2..=128).contains(&v.chars().count()) {
+                if !(2..=128).contains(&len(v)) {
                     add(field, &format!("{label} must be 2 to 128 characters"));
                 }
             }
@@ -233,7 +247,7 @@ impl Presence {
             if src.is_empty() {
                 continue;
             }
-            if src.chars().count() > 256 {
+            if len(src) > 256 {
                 add(
                     source,
                     &format!("{name} source must be 256 characters or fewer"),
@@ -245,7 +259,7 @@ impl Presence {
                 );
             }
             if let Some(t) = clean(&img.text) {
-                if !(2..=128).contains(&t.chars().count()) {
+                if !(2..=128).contains(&len(t)) {
                     add(text, &format!("{name} text must be 2 to 128 characters"));
                 }
             }
@@ -259,7 +273,7 @@ impl Presence {
         }
         for (i, b) in self.buttons.iter().enumerate() {
             let label = b.label.trim();
-            if label.is_empty() || label.chars().count() > 32 {
+            if label.is_empty() || len(label) > 32 {
                 add(
                     Field::ButtonLabel(i),
                     "Button label must be 1 to 32 characters",
@@ -364,7 +378,7 @@ fn check_url(add: &mut impl FnMut(Field, &str), field: Field, label: &str, url: 
             field,
             &format!("{label} must start with https:// or http://"),
         );
-    } else if url.chars().count() > 512 {
+    } else if len(url) > 512 {
         add(field, &format!("{label} must be 512 characters or fewer"));
     }
 }
@@ -424,11 +438,22 @@ mod tests {
     }
 
     #[test]
+    fn length_is_counted_the_way_discord_counts() {
+        let mut p = base();
+        // One emoji is two UTF-16 units: long enough alone, and 65 of them are too many.
+        p.details = Some("🎮".into());
+        p.state = Some("🎮".repeat(64));
+        assert!(p.validate().is_empty());
+        p.state = Some("🎮".repeat(65));
+        assert_eq!(fields(&p), vec![Field::State]);
+    }
+
+    #[test]
     fn text_length_rules() {
         let mut p = base();
         p.details = Some("x".into());
         p.state = Some("y".repeat(129));
-        p.name = Some("é".repeat(128)); // counted in chars, not bytes
+        p.name = Some("é".repeat(128)); // counted in UTF-16 units, not bytes
         let issues = p.validate();
         assert_eq!(
             issues.iter().map(|i| i.field).collect::<Vec<_>>(),

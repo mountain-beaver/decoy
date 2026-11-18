@@ -1,7 +1,7 @@
 import type { FieldId } from './types';
 
-/** Length in Unicode characters, the way the core counts it. */
-export const chars = (s: string | null | undefined) => (s ? [...s].length : 0);
+/** Length the way Discord checks it: UTF-16 units, so an emoji counts as two. */
+export const chars = (s: string | null | undefined) => (s ? s.length : 0);
 
 export const clean = (s: string | null | undefined) => {
   const t = s?.trim();
