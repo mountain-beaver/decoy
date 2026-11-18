@@ -1,0 +1,22 @@
+[package]
+name = "decoy-daemon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Decoy tray daemon for Linux: owns the presence and the tray, no GUI toolkit"
+
+[[bin]]
+name = "decoy-daemon"
+path = "src/main.rs"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+decoy-app = { version = "0.1.0", path = "../decoy-app" }
+decoy-core = { version = "0.1.0", path = "../decoy-core" }
+ksni = { version = "0.3.7", default-features = false, features = ["async-io", "blocking"] }
+serde_json = "1.0.154"
+
+[build-dependencies]
+png = "0.18.1"
+
+[dev-dependencies]
+tempfile = "3.27.0"
