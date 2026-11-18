@@ -213,6 +213,7 @@ pub fn run() {
             commands::list_assets,
             commands::set_settings,
             commands::open_external,
+            commands::check_update,
             perf::perf_report,
             perf::smoke_report,
         ])

@@ -510,6 +510,7 @@ mod tests {
             connect_on_launch: true,
             start_in_tray: true,
             autostart: false,
+            skip_update_check: false,
         })
         .unwrap();
         let s = c.state().settings;

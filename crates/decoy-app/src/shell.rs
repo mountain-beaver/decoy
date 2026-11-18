@@ -163,3 +163,48 @@ mod tests {
         assert!(list_assets("").is_err());
     }
 }
+
+/// How long an answer about the latest release is reused.
+const UPDATE_TTL_SECS: u64 = 12 * 60 * 60;
+const UPDATE_FILE: &str = "update.json";
+
+#[derive(Serialize, serde::Deserialize)]
+struct CachedUpdate {
+    checked_at: u64,
+    /// The version that asked, so an answer from before an upgrade is not reused.
+    current: String,
+    update: Option<decoy_core::Update>,
+}
+
+fn unix_now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+/// A release newer than `current`, asking GitHub at most twice a day. The
+/// answer is kept in `cache_dir`. Blocking; any failure means "no update".
+pub fn check_update(cache_dir: &std::path::Path, current: &str) -> Option<decoy_core::Update> {
+    let file = cache_dir.join(UPDATE_FILE);
+    let now = unix_now();
+    if let Some(cached) = std::fs::read(&file)
+        .ok()
+        .and_then(|b| serde_json::from_slice::<CachedUpdate>(&b).ok())
+    {
+        if cached.current == current && now.saturating_sub(cached.checked_at) < UPDATE_TTL_SECS {
+            return cached.update;
+        }
+    }
+    let update = decoy_core::update::check(current).ok()?;
+    let cached = CachedUpdate {
+        checked_at: now,
+        current: current.to_string(),
+        update: update.clone(),
+    };
+    if let Ok(bytes) = serde_json::to_vec(&cached) {
+        let _ = std::fs::create_dir_all(cache_dir);
+        let _ = std::fs::write(&file, bytes);
+    }
+    update
+}

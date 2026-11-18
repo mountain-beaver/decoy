@@ -11,6 +11,7 @@ pub mod ipc;
 mod pipe;
 pub mod presence;
 pub mod store;
+pub mod update;
 mod util;
 
 #[cfg(test)]
@@ -26,3 +27,4 @@ pub use presence::{
     TimestampMode,
 };
 pub use store::{Profile, Settings, Store};
+pub use update::Update;

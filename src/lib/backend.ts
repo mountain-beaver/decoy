@@ -2,7 +2,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type {
-  AppInfo, AppState, AssetInfo, EngineState, GameHit, Issue, Presence, Profile, Settings,
+  AppInfo, AppState, AssetInfo, EngineState, GameHit, Issue, Presence, Profile, Settings, Update,
 } from './types';
 import { createMock } from './mock';
 
@@ -23,6 +23,7 @@ export interface Backend {
   listAssets(appId: string): Promise<AssetInfo[]>;
   setSettings(settings: Settings): Promise<void>;
   openExternal(url: string): Promise<void>;
+  checkUpdate(): Promise<Update | null>;
   onEngineState(cb: (s: EngineState) => void): Promise<() => void>;
   onAppState(cb: (s: AppState) => void): Promise<() => void>;
 }
@@ -46,6 +47,7 @@ function createTauri(): Backend {
     listAssets: (appId) => call('list_assets', { appId }),
     setSettings: (settings) => call('set_settings', { settings }),
     openExternal: (url) => call('open_external', { url }),
+    checkUpdate: () => call('check_update'),
     onEngineState: (cb) => listen<EngineState>('engine-state', (e) => cb(e.payload)),
     onAppState: (cb) => listen<AppState>('app-state', (e) => cb(e.payload)),
   };

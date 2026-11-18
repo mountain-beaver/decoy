@@ -1,7 +1,7 @@
 import { untrack } from 'svelte';
 import { backend } from './backend';
 import type {
-  AppState, AssetInfo, EngineState, GameHit, GamesInfo, Issue, Presence, Profile, Settings,
+  AppState, AssetInfo, EngineState, GameHit, GamesInfo, Issue, Presence, Profile, Settings, Update,
 } from './types';
 import { errMsg, fieldKey, isAppId } from './util';
 
@@ -38,7 +38,9 @@ class AppStore {
   engine = $state<EngineState>({ status: 'idle' });
   showing = $state(false);
   profiles = $state<Profile[]>([]);
-  settings = $state<Settings>({ active_profile: null, connect_on_launch: true, start_in_tray: false, autostart: false });
+  settings = $state<Settings>({ active_profile: null, connect_on_launch: true, start_in_tray: false, autostart: false, skip_update_check: false });
+  /** A newer release, once the check found one. */
+  update = $state<Update | null>(null);
   games = $state<GamesInfo>({ count: 0, fetched_at: null, loading: false, error: null });
   version = $state('');
 
@@ -90,6 +92,8 @@ class AppStore {
     const th = url.get('theme') ?? lsGet('decoy.theme');
     if (th === 'light' || th === 'dark') this.theme = th;
     this.#applyLook();
+    // Ask once per window; the backend keeps the answer for half a day.
+    void backend.checkUpdate().then((u) => (this.update = u)).catch(() => {});
 
     $effect.root(() => {
       $effect(() => {
@@ -407,6 +411,10 @@ class AppStore {
     try { await backend.setSettings($state.snapshot(this.settings) as Settings); } catch (e) {
       this.settings = prev;
       this.toast(errMsg(e), 'error');
+      return;
+    }
+    if ('skip_update_check' in patch) {
+      this.update = patch.skip_update_check ? null : await backend.checkUpdate().catch(() => null);
     }
   }
 

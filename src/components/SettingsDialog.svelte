@@ -35,6 +35,7 @@
         <Toggle label="Start with my computer" checked={app.settings.autostart} onchange={(v) => app.updateSettings({ autostart: v })} />
         <Toggle label="Start hidden in the tray" hint="The window stays closed until you open it from the tray icon." checked={app.settings.start_in_tray} onchange={(v) => app.updateSettings({ start_in_tray: v })} />
         <Toggle label="Connect when Decoy starts" hint="Shows your active profile as soon as Discord is running." checked={app.settings.connect_on_launch} onchange={(v) => app.updateSettings({ connect_on_launch: v })} />
+        <Toggle label="Check for updates" hint="Asks GitHub for the latest version when the window opens. Nothing is installed by itself." checked={!app.settings.skip_update_check} onchange={(v) => app.updateSettings({ skip_update_check: !v })} />
       </section>
 
       <section class="grp" aria-labelledby="set-look">
@@ -74,7 +75,10 @@
     </div>
 
     <div class="foot">
-      <p class="caption">Decoy {app.version || '0.1.0'}<br />Not affiliated with Discord or any game publisher.</p>
+      <p class="caption">
+        Decoy {app.version || '0.1.0'}{#if app.update}, <button type="button" class="link" style="display:inline" onclick={() => app.openExternal(app.update!.url)}>version {app.update.version} is out</button>{/if}<br />
+        Not affiliated with Discord or any game publisher.
+      </p>
       <button type="button" class="btn primary" onclick={() => (app.settingsOpen = false)}>Done</button>
     </div>
   </div>

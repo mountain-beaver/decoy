@@ -106,6 +106,23 @@ pub async fn lookup_app(app_id: String) -> Result<AppLookup, String> {
         .map_err(|e| e.to_string())?
 }
 
+/// A newer release, if there is one and the user did not switch the check off.
+#[tauri::command]
+pub async fn check_update(
+    app: AppHandle,
+    be: Be<'_>,
+) -> Result<Option<decoy_core::Update>, String> {
+    if be.state()?.settings.skip_update_check {
+        return Ok(None);
+    }
+    let cache_dir = app.path().app_cache_dir().map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        shell::check_update(&cache_dir, env!("CARGO_PKG_VERSION"))
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub async fn list_assets(app_id: String) -> Result<Vec<AssetInfo>, String> {
     tauri::async_runtime::spawn_blocking(move || shell::list_assets(&app_id))

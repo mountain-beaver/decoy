@@ -36,6 +36,9 @@
   {#if n > 0 && app.draft}
     <button type="button" class="fix" onclick={firstIssue}>{n === 1 ? '1 thing to fix' : `${n} things to fix`}</button>
   {/if}
+  {#if app.update && !guide.open}
+    <button type="button" class="upd" title="Open the download page" onclick={() => app.openExternal(app.update!.url)}>Update to {app.update.version}</button>
+  {/if}
   {#if guide.open}
     <button type="button" class="btn back" onclick={() => guide.close()}>
       <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M6.5 1.500 3 5l3.500 3.500" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -58,6 +61,8 @@
   .top :global(.status) { margin-left: auto; }
   .gbtn { background: none; border: 0; padding: 5px 4px; font-weight: 500; color: var(--muted); white-space: nowrap; border-radius: 6px; }
   .gbtn:hover { color: var(--ink); }
+  .upd { background: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .upd:hover { border-color: var(--accent); }
   .back { padding: 5px 12px 5px 9px; white-space: nowrap; }
   .back svg { width: 10px; height: 10px; }
   .switch:disabled { opacity: .5; cursor: default; }

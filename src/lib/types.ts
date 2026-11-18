@@ -64,6 +64,13 @@ export interface Settings {
   connect_on_launch: boolean;
   start_in_tray: boolean;
   autostart: boolean;
+  skip_update_check: boolean;
+}
+
+/** A release newer than the running version. */
+export interface Update {
+  version: string;
+  url: string;
 }
 
 export interface DiscordUser {

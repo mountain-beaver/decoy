@@ -27,6 +27,8 @@ pub struct Settings {
     pub connect_on_launch: bool,
     pub start_in_tray: bool,
     pub autostart: bool,
+    /// Off by default, so the app looks for a newer release unless told not to.
+    pub skip_update_check: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
