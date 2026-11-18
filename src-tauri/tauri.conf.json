@@ -29,6 +29,13 @@
     ],
     "category": "Utility",
     "shortDescription": "Custom Discord Rich Presence for every desktop",
-    "license": "MIT"
+    "license": "MIT",
+    "publisher": "Decoy contributors",
+    "homepage": "https://github.com/mountain-beaver/decoy",
+    "longDescription": "Decoy shows a custom Rich Presence on your Discord profile: any game or app name, your own text, images, buttons, a timer and the small icon next to your name in voice channels. It sits in the tray and uses next to nothing while idle.",
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "10.15"
+    }
   }
 }
