@@ -43,7 +43,7 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|p| p.into_inner())
 }
 
-/// `$DECOY_SOCKET`, else `$XDG_RUNTIME_DIR/decoy.sock`, else `/tmp/decoy-<uid>.sock`.
+/// `$DECOY_SOCKET`, else `$XDG_RUNTIME_DIR/decoy.sock`, else `/tmp/decoy-<uid>/decoy.sock`.
 pub fn socket_path() -> PathBuf {
     let env = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty());
     if let Some(p) = env("DECOY_SOCKET") {
@@ -52,9 +52,45 @@ pub fn socket_path() -> PathBuf {
     if let Some(dir) = env("XDG_RUNTIME_DIR") {
         return PathBuf::from(dir).join("decoy.sock");
     }
+    fallback_dir().join("decoy.sock")
+}
+
+fn uid() -> u32 {
     // SAFETY: getuid has no preconditions and cannot fail.
-    let uid = unsafe { libc::getuid() };
-    PathBuf::from(format!("/tmp/decoy-{uid}.sock"))
+    unsafe { libc::getuid() }
+}
+
+/// Where the socket lives when there is no `XDG_RUNTIME_DIR`.
+fn fallback_dir() -> PathBuf {
+    PathBuf::from(format!("/tmp/decoy-{}", uid()))
+}
+
+/// `/tmp` is shared with every user of the machine, so a socket there needs a
+/// directory nobody else can enter or prepare in advance: ours, a real
+/// directory, and closed to group and others.
+fn check_private_dir(dir: &Path) -> io::Result<()> {
+    use std::os::unix::fs::{DirBuilderExt, MetadataExt};
+    match std::fs::DirBuilder::new().mode(0o700).create(dir) {
+        Ok(()) => {}
+        Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {}
+        Err(e) => return Err(e),
+    }
+    let meta = std::fs::symlink_metadata(dir)?;
+    if !meta.is_dir() || meta.uid() != uid() || meta.mode() & 0o077 != 0 {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            format!("{} is not a private directory of this user", dir.display()),
+        ));
+    }
+    Ok(())
+}
+
+/// Refuse a socket in the shared fallback location unless its directory is private.
+fn check_location(path: &Path) -> io::Result<()> {
+    match path.parent() {
+        Some(dir) if dir == fallback_dir() => check_private_dir(dir),
+        _ => Ok(()),
+    }
 }
 
 // ===================================================================== server
@@ -120,6 +156,7 @@ impl Server {
     /// daemon runs; with the lock held, a leftover socket file is stale and is
     /// replaced. The socket ends up with mode 0600.
     pub fn bind(path: &Path) -> Result<Server, BindError> {
+        check_location(path)?;
         if let Some(dir) = path.parent().filter(|d| !d.as_os_str().is_empty()) {
             std::fs::create_dir_all(dir)?;
         }
@@ -313,6 +350,7 @@ pub struct Connection {
 impl Connection {
     /// Connect and read the hello.
     pub fn open(path: &Path) -> io::Result<Connection> {
+        check_location(path)?;
         let stream = UnixStream::connect(path)?;
         stream.set_read_timeout(Some(HELLO_TIMEOUT))?;
         stream.set_write_timeout(Some(WRITE_TIMEOUT))?;
@@ -519,5 +557,39 @@ pub fn ensure_daemon(
             Err(_) if Instant::now() < end => std::thread::sleep(Duration::from_millis(50)),
             Err(_) => return Err("The Decoy background service did not start".into()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    #[test]
+    fn fallback_socket_needs_a_private_directory() {
+        let tmp = tempfile::tempdir().unwrap();
+        // Created by us: private.
+        let dir = tmp.path().join("fresh");
+        check_private_dir(&dir).unwrap();
+        assert_eq!(
+            std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
+            0o700
+        );
+        // Open to others: refused.
+        let open = tmp.path().join("open");
+        std::fs::create_dir(&open).unwrap();
+        std::fs::set_permissions(&open, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(check_private_dir(&open).is_err());
+        // Not a directory at all (a link someone left there): refused.
+        let link = tmp.path().join("link");
+        std::os::unix::fs::symlink(&dir, &link).unwrap();
+        assert!(check_private_dir(&link).is_err());
+    }
+
+    #[test]
+    fn other_locations_are_left_alone() {
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::set_permissions(tmp.path(), std::fs::Permissions::from_mode(0o755)).unwrap();
+        check_location(&tmp.path().join("decoy.sock")).unwrap();
     }
 }
