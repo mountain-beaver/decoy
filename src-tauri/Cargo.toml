@@ -5,9 +5,10 @@ edition.workspace = true
 license.workspace = true
 description = "Custom Discord Rich Presence for every desktop"
 
+# Desktop only, so a plain rlib: the staticlib and cdylib that Tauri's template
+# adds are for Android and iOS.
 [lib]
 name = "decoy_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.7.6", features = [] }
