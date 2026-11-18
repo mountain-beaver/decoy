@@ -168,12 +168,17 @@ impl Controller {
         external: bool,
         f: impl FnOnce(&Self) -> Result<T, String>,
     ) -> Result<T, String> {
-        let out = {
+        let (out, showing_changed) = {
             let _g = lock(&self.op);
-            f(self)
+            let before = self.is_showing();
+            let out = f(self);
+            (out, before != self.is_showing())
         };
         if out.is_ok() {
-            self.changed(external);
+            // A change the window did not ask for directly (the presence was
+            // hidden because the new active profile cannot be shown) must reach
+            // it too, or its switch keeps saying "Showing in Discord".
+            self.changed(external || showing_changed);
         }
         out
     }
@@ -589,6 +594,8 @@ mod tests {
         c.set_showing(true).unwrap();
         c.set_active_profile(&b.id).unwrap();
         assert!(!c.is_showing());
+        // The window asked for the switch, not for hiding: it must be told.
+        assert_eq!(env.app_changes().last(), Some(&true));
     }
 
     #[test]
@@ -601,6 +608,7 @@ mod tests {
         c.set_showing(true).unwrap();
         c.delete_profile(&a.id).unwrap();
         assert!(!c.is_showing());
+        assert_eq!(env.app_changes().last(), Some(&true));
     }
 
     #[test]
