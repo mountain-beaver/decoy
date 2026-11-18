@@ -30,7 +30,7 @@
   {:else if entry?.state === 'ok'}
     <div class="pick"><Tile url={entry.icon_url} seed={id} size={22} /><b>{entry.name}</b><small>found on Discord</small></div>
   {:else if entry?.state === 'error' && isAppId(id)}
-    <p class="err"><span>Discord could not find this application. {entry.message ?? ''} Copy the ID from General Information in your application's page in the <button type="button" class="link" onclick={() => app.openExternal('https://discord.com/developers/applications')}>Discord Developer Portal</button>.</span></p>
+    <p class="err"><span>Discord could not find this application. {entry.message && entry.message !== 'Not found' ? `${entry.message} ` : ''}Copy the ID from General Information in your application's page in the <button type="button" class="link" onclick={() => app.openExternal('https://discord.com/developers/applications')}>Discord Developer Portal</button>.</span></p>
   {:else}
     <p class="caption">Create an application in the Developer Portal, then paste its Application ID here.</p>
   {/if}

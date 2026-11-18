@@ -69,7 +69,7 @@
             <small>found on Discord</small>
           </div>
         {:else if entry?.state === 'error' && isAppId(id)}
-          <p class="err"><span>Discord could not find this application. {entry.message ?? ''} Copy the ID from General Information in your application's page in the <button type="button" class="link" onclick={() => app.openExternal('https://discord.com/developers/applications')}>Discord Developer Portal</button>.</span></p>
+          <p class="err"><span>Discord could not find this application. {entry.message && entry.message !== 'Not found' ? `${entry.message} ` : ''}Copy the ID from General Information in your application's page in the <button type="button" class="link" onclick={() => app.openExternal('https://discord.com/developers/applications')}>Discord Developer Portal</button>.</span></p>
         {:else if !missingId}
           <Errs keys={['app_id']} />
         {:else}
