@@ -17,6 +17,8 @@ mod vblank;
 
 use std::sync::Arc;
 
+#[cfg(not(target_os = "linux"))]
+use decoy_app::Change;
 use decoy_app::{AppState, DaemonState, Games};
 use tauri::{AppHandle, Emitter, Manager, Url, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt as _};
@@ -51,10 +53,9 @@ pub fn show_main_window(app: &AppHandle) {
         .center()
         .decorations(true)
         .on_navigation(allow_navigation);
-        let built = if perf::enabled() {
-            built.initialization_script(perf::SCRIPT)
-        } else {
-            built
+        let built = match perf::script() {
+            Some(script) => built.initialization_script(script),
+            None => built,
         };
         match built.build() {
             #[cfg(target_os = "linux")]
@@ -110,7 +111,7 @@ fn on_games_changed(app: &AppHandle) {
 #[cfg(not(target_os = "linux"))]
 mod single_process {
     use super::*;
-    use decoy_app::{Change, Controller};
+    use decoy_app::Controller;
     use std::sync::atomic::{AtomicBool, Ordering};
 
     /// Set once "Quit Decoy" was chosen; only then may the process exit.
@@ -178,9 +179,10 @@ pub fn run() {
         return;
     }
 
+    perf::start_watchdog();
     let mut builder = tauri::Builder::default();
-    // Must be the first plugin. The frame-rate self-test runs next to a normal
-    // instance, so it does not take part.
+    // Must be the first plugin. A self-test runs next to a normal instance, so
+    // it does not take part.
     if !perf::isolated() {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if !args.iter().any(|a| a == HIDDEN_ARG) {
@@ -212,6 +214,7 @@ pub fn run() {
             commands::set_settings,
             commands::open_external,
             perf::perf_report,
+            perf::smoke_report,
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
@@ -265,7 +268,8 @@ pub fn run() {
             }
 
             // On Linux `--hidden` returned above, so a launch here always opens the window.
-            if cfg!(target_os = "linux") || (!hidden_arg && !settings.start_in_tray) {
+            let self_test = perf::isolated();
+            if cfg!(target_os = "linux") || self_test || (!hidden_arg && !settings.start_in_tray) {
                 show_main_window(&handle);
             }
             Ok(())

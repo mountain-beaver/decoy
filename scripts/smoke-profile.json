@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "settings": { "active_profile": "p1", "connect_on_launch": true, "start_in_tray": false, "autostart": false },
+  "profiles": [
+    {
+      "id": "p1",
+      "name": "Skyline Racer",
+      "presence": {
+        "app_id": "1234567890123456789",
+        "kind": "playing",
+        "details": "Racing, lap 3",
+        "state": "In a lobby",
+        "party": { "current": 2, "max": 4 },
+        "timestamps": { "mode": "since_connect" },
+        "buttons": [{ "label": "Watch trailer", "url": "https://example.com" }]
+      }
+    }
+  ]
+}

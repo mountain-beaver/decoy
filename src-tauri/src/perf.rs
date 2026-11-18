@@ -1,7 +1,10 @@
-//! Frame-rate self-test, enabled with `DECOY_PERF=1`. The window measures how
-//! many frames it really draws (idle and while scrolling the form), prints one
-//! JSON line to stdout and exits. Used to check smoothness on high refresh
-//! rate displays; never active in normal runs.
+//! Self-tests, never active in normal runs.
+//!
+//! * `DECOY_PERF=1`: the window measures how many frames it really draws (idle
+//!   and while scrolling the form), prints one JSON line to stdout and exits.
+//! * `DECOY_SMOKE=<file>`: the window reports that it rendered and that the
+//!   commands answer, the report is written to the file and the app exits.
+//!   CI runs this on Windows, macOS and Linux and takes a screenshot meanwhile.
 
 use tauri::AppHandle;
 
@@ -12,8 +15,78 @@ pub fn enabled() -> bool {
 /// A test instance that must not hand over to the user's running one:
 /// the self-test, or a run with `DECOY_DEV_QUERY` (start on a given screen).
 pub fn isolated() -> bool {
-    enabled() || std::env::var_os("DECOY_DEV_QUERY").is_some()
+    enabled() || smoke_file().is_some() || std::env::var_os("DECOY_DEV_QUERY").is_some()
 }
+
+/// Where the smoke test writes its report; `None` in normal runs.
+pub fn smoke_file() -> Option<std::path::PathBuf> {
+    std::env::var_os("DECOY_SMOKE")
+        .filter(|v| !v.is_empty())
+        .map(Into::into)
+}
+
+/// The script to inject before the page's own, if a self-test is on.
+pub fn script() -> Option<&'static str> {
+    if enabled() {
+        Some(SCRIPT)
+    } else if smoke_file().is_some() {
+        Some(SMOKE_SCRIPT)
+    } else {
+        None
+    }
+}
+
+/// Smoke test: give up when the window never reports.
+pub fn start_watchdog() {
+    let Some(file) = smoke_file() else { return };
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(90));
+        if !file.exists() {
+            let _ = std::fs::write(
+                &file,
+                r#"{"ok":false,"error":"no report from the window in 90 s"}"#,
+            );
+            std::process::exit(1);
+        }
+    });
+}
+
+const SMOKE_SCRIPT: &str = r#"
+(function () {
+  if (window.top !== window) return;
+  const t0 = performance.now();
+  const errors = [];
+  window.addEventListener('error', (e) => errors.push(String(e.message)));
+  window.addEventListener('unhandledrejection', (e) => errors.push(String(e.reason)));
+  const send = (r) => window.__TAURI_INTERNALS__.invoke('smoke_report', { report: JSON.stringify(r) });
+  const report = async (text) => {
+    try {
+      const state = await window.__TAURI_INTERNALS__.invoke('get_state');
+      const fonts = document.fonts ? [...document.fonts].filter((f) => f.status === 'loaded').length : -1;
+      send({
+        ok: errors.length === 0, ms: Math.round(performance.now() - t0), ua: navigator.userAgent,
+        dpr: devicePixelRatio, width: innerWidth, height: innerHeight, fonts,
+        profiles: (state.profiles || []).length, engine: state.engine && state.engine.status,
+        text: text.replace(/\s+/g, ' ').slice(0, 240), errors,
+      });
+    } catch (e) {
+      send({ ok: false, error: String(e), errors });
+    }
+  };
+  const tick = () => {
+    const text = ((document.body && document.body.innerText) || '').trim();
+    if (text.length > 30 && window.__TAURI_INTERNALS__) {
+      // Let fonts and the first network answers settle before the screenshot.
+      setTimeout(() => report(text), 1500);
+    } else if (performance.now() - t0 > 60000) {
+      send({ ok: false, error: 'the page did not render', text, errors });
+    } else {
+      setTimeout(tick, 250);
+    }
+  };
+  tick();
+})();
+"#;
 
 /// `DECOY_DEV_SIZE=1900x1250` opens the window at that size (for the self-test).
 pub fn window_size() -> (f64, f64) {
@@ -71,4 +144,21 @@ window.addEventListener('load', () => setTimeout(async () => {
 pub fn perf_report(app: AppHandle, report: String) {
     println!("DECOY_PERF {report}");
     app.exit(0);
+}
+
+/// Smoke test: store the window's report, keep the window up for the
+/// screenshot (`DECOY_SMOKE_HOLD` seconds), then exit.
+#[tauri::command]
+pub fn smoke_report(app: AppHandle, report: String) {
+    let Some(file) = smoke_file() else { return };
+    let ok = report.contains("\"ok\":true");
+    let _ = std::fs::write(&file, &report);
+    let hold = std::env::var("DECOY_SMOKE_HOLD")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(0);
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(hold));
+        app.exit(if ok { 0 } else { 1 });
+    });
 }
