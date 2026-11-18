@@ -4,59 +4,76 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  core:
+  test:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - uses: swatinem/rust-cache@v2
-      # Tests with a fake Discord run on Unix only; on Windows what matters is that the core builds and passes the rest.
-      - run: cargo test -p decoy-core
-      - run: cargo clippy -p decoy-core --all-targets -- -D warnings
-      # Controller, game list and local RPC (the RPC tests run on Unix only).
-      - run: cargo test -p decoy-app
-      - run: cargo clippy -p decoy-app --all-targets -- -D warnings
-
-  app:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-22.04, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils
-      - uses: pnpm/action-setup@v4
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils xvfb imagemagick
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: lts/*
           cache: pnpm
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
       - uses: swatinem/rust-cache@v2
+
       - run: pnpm install --frozen-lockfile
+      - run: pnpm check
       - run: pnpm build
-      # On Linux the tray lives in a separate daemon; Tauri expects it as a sidecar, so it is built first.
-      - name: Prepare tray daemon
-        if: runner.os == 'Linux'
-        run: bash scripts/prepare-daemon.sh --debug
-      - name: Test tray daemon
+
+      - run: cargo fmt --all --check
+
+      # The core and the shared app logic. Tests that need a fake Discord on a
+      # Unix socket run on Linux and macOS only.
+      - run: cargo test -p decoy-core -p decoy-app
+      - run: cargo clippy -p decoy-core -p decoy-app --all-targets -- -D warnings
+
+      # Linux keeps the tray in a separate daemon that ships as a sidecar, so it
+      # has to exist before the desktop shell is built.
+      - name: Tray daemon (Linux)
         if: runner.os == 'Linux'
         run: |
+          bash scripts/prepare-daemon.sh --debug
           cargo test -p decoy-daemon
           cargo clippy -p decoy-daemon --all-targets -- -D warnings
-      - run: cargo test -p decoy
-      - run: cargo clippy -p decoy --all-targets -- -D warnings
+
+      # The desktop shell, built the way a release is (frontend bundled in).
+      - run: cargo build -p decoy --features tauri/custom-protocol
+      - run: cargo test -p decoy --features tauri/custom-protocol
+      - run: cargo clippy -p decoy --all-targets --features tauri/custom-protocol -- -D warnings
+
+      # Start the real app: the window has to render and answer commands.
+      - name: Smoke test (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a -s "-screen 0 1280x800x24" dbus-run-session -- bash scripts/smoke.sh target/debug/decoy smoke
+        env:
+          WEBKIT_DISABLE_DMABUF_RENDERER: 1
+      - name: Smoke test (Windows, macOS)
+        if: runner.os != 'Linux'
+        shell: bash
+        run: bash scripts/smoke.sh target/debug/decoy smoke
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: smoke-${{ runner.os }}
+          path: smoke/
+          if-no-files-found: ignore

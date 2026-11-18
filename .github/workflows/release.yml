@@ -1,6 +1,8 @@
 name: release
 
-# Builds installers for every system on a tag like v1.2.3; the release is created as a draft.
+# A tag like v1.2.3 builds installers for every system and attaches them to a
+# draft release. Started by hand, it only builds them and keeps them as
+# workflow artifacts, which is how to try a build before tagging.
 on:
   workflow_dispatch:
   push:
@@ -15,44 +17,41 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            args: --target aarch64-apple-darwin
-          - platform: macos-latest
-            args: --target x86_64-apple-darwin
+            args: --target universal-apple-darwin
           - platform: ubuntu-22.04
-            args: ''
-          - platform: ubuntu-22.04-arm
             args: ''
           - platform: windows-latest
             args: ''
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: lts/*
           cache: pnpm
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
       - uses: swatinem/rust-cache@v2
       - run: pnpm install --frozen-lockfile
-      # On Linux beforeBuildCommand (src-tauri/tauri.linux.conf.json) builds the tray daemon itself
-      # with scripts/prepare-daemon.sh and places it as a sidecar.
+      # On Linux the build first runs scripts/prepare-daemon.sh (see
+      # src-tauri/tauri.linux.conf.json), which builds the tray daemon sidecar.
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__
+          tagName: ${{ github.ref_type == 'tag' && 'v__VERSION__' || '' }}
           releaseName: 'Decoy v__VERSION__'
           releaseBody: 'Download the installer for your system from the assets below.'
           releaseDraft: true
           prerelease: false
+          uploadWorkflowArtifacts: ${{ github.ref_type != 'tag' }}
           args: ${{ matrix.args }}
