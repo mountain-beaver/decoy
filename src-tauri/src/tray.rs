@@ -10,7 +10,13 @@ use tauri::{AppHandle, Manager};
 use decoy_app::{tooltip, Controller, DaemonState};
 
 const TRAY_ID: &str = "main";
+// macOS tints a template image itself, so the light duck works in both menu bar
+// styles. Windows has light and dark taskbars and no tinting: use the duck on its
+// dark tile there, which reads on both.
+#[cfg(not(windows))]
 const TRAY_PNG: &[u8] = include_bytes!("../../assets/tray.png");
+#[cfg(windows)]
+const TRAY_PNG: &[u8] = include_bytes!("../icons/64x64.png");
 const ID_OPEN: &str = "open";
 const ID_SHOWING: &str = "showing";
 const ID_QUIT: &str = "quit";
@@ -60,7 +66,10 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
     let state = controller(app).map(|c| c.state());
     let mut builder = TrayIconBuilder::with_id(TRAY_ID)
         .icon(Image::from_bytes(TRAY_PNG)?)
-        .show_menu_on_left_click(false)
+        .icon_as_template(true)
+        // A menu bar icon on macOS opens its menu on click; a Windows tray icon
+        // opens the app on click and the menu on right click.
+        .show_menu_on_left_click(cfg!(target_os = "macos"))
         .on_menu_event(on_menu_event)
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click {
@@ -69,7 +78,9 @@ pub fn build(app: &AppHandle) -> tauri::Result<()> {
                 ..
             } = event
             {
-                crate::show_main_window(tray.app_handle());
+                if !cfg!(target_os = "macos") {
+                    crate::show_main_window(tray.app_handle());
+                }
             }
         });
     if let Some(state) = &state {
