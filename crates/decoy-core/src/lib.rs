@@ -3,6 +3,8 @@
 
 pub mod engine;
 pub mod error;
+pub mod games;
+mod http;
 pub mod ipc;
 pub mod presence;
 pub mod store;
@@ -13,6 +15,7 @@ mod testutil;
 
 pub use engine::{Engine, EngineState};
 pub use error::{Error, Result};
+pub use games::{Game, GameIndex};
 pub use ipc::{Client, ConnectOptions, DiscordUser};
 pub use presence::{
     ActivityKind, Button, Field, Image, Issue, Party, Presence, StatusDisplay, TimeContext,
