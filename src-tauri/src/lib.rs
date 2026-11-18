@@ -186,7 +186,11 @@ pub fn run() {
     if !perf::isolated() {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if !args.iter().any(|a| a == HIDDEN_ARG) {
-                show_main_window(app);
+                // On Windows this runs inside the window message that carried
+                // the second launch. Building a webview there can fail, so hand
+                // the work over and return first.
+                let handle = app.clone();
+                std::thread::spawn(move || show_main_window(&handle));
             }
         }));
     }
@@ -280,7 +284,8 @@ pub fn run() {
 
     app.run(|app, event| {
         // Windows and macOS: closing the last window must not end the process;
-        // only "Quit" does. Linux: the process ends with its window.
+        // only "Quit" does (Cmd+Q on macOS ends it directly, which also
+        // closes the Discord connection). Linux: the process ends with its window.
         #[cfg(not(target_os = "linux"))]
         match event {
             tauri::RunEvent::ExitRequested { api, code, .. } => {
