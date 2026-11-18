@@ -137,7 +137,8 @@ fn config_dir() -> Option<PathBuf> {
     Some(base.join(IDENTIFIER))
 }
 
-/// Start the `decoy` UI binary that sits next to this executable.
+/// Start the window: the command the window process named when it started this
+/// daemon (an AppImage file, for one), else the `decoy` binary next to this one.
 fn open_ui() {
     static LAST: Mutex<Option<Instant>> = Mutex::new(None);
     {
@@ -147,9 +148,14 @@ fn open_ui() {
         }
         *last = Some(Instant::now());
     }
-    let exe = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.join("decoy")));
+    let named = std::env::var_os(rpc::ENV_UI)
+        .map(std::path::PathBuf::from)
+        .filter(|p| p.is_file());
+    let exe = named.or_else(|| {
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.join("decoy")))
+    });
     match exe {
         Some(exe) => {
             if let Err(e) = rpc::spawn_detached(&exe) {

@@ -8,13 +8,52 @@ use decoy_app::rpc::{self, Client};
 use gtk::prelude::GtkSettingsExt;
 use serde_json::Value;
 
-/// `decoy-daemon` next to this executable (same folder in `target/`, in a .deb
-/// and inside an AppImage).
-fn daemon_exe() -> Result<PathBuf, String> {
-    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
-    exe.parent()
+/// The AppImage file this process was started from, if any.
+fn appimage() -> Option<PathBuf> {
+    std::env::var_os("APPIMAGE")
+        .map(PathBuf::from)
+        .filter(|p| p.is_file())
+}
+
+/// The daemon to start: `decoy-daemon` next to this executable (same folder in
+/// `target/` and in a .deb or .rpm).
+///
+/// An AppImage is different: its files live in a mount that goes away when this
+/// process exits, which would pull the binary from under the running daemon. So
+/// from an AppImage the daemon runs as a copy in the user's data directory.
+fn daemon_exe() -> std::io::Result<PathBuf> {
+    let exe = std::env::current_exe()?;
+    let bundled = exe
+        .parent()
         .map(|d| d.join("decoy-daemon"))
-        .ok_or_else(|| "Cannot locate the Decoy background service".to_string())
+        .ok_or_else(|| std::io::Error::other("cannot locate the Decoy background service"))?;
+    if appimage().is_none() {
+        return Ok(bundled);
+    }
+    let data = std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .filter(|p| p.is_absolute())
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))
+        .ok_or_else(|| std::io::Error::other("HOME is not set"))?
+        .join("dev.decoy.app");
+    std::fs::create_dir_all(&data)?;
+    let copy = data.join("decoy-daemon");
+    // Copy aside and rename: a daemon still running from the old file keeps it.
+    let fresh = data.join(format!(".decoy-daemon.{}", std::process::id()));
+    std::fs::copy(&bundled, &fresh)?;
+    std::fs::rename(&fresh, &copy)?;
+    Ok(copy)
+}
+
+/// Start the daemon and tell it how to open the window later: through the
+/// AppImage file when there is one, else through this executable.
+fn spawn_daemon() -> std::io::Result<()> {
+    let daemon = daemon_exe()?;
+    let ui = match appimage() {
+        Some(file) => file,
+        None => std::env::current_exe()?,
+    };
+    rpc::spawn_detached_with(&daemon, &[(rpc::ENV_UI, ui.as_os_str())])
 }
 
 /// Connect to the daemon, starting it if needed (detached, so it outlives this process).
@@ -25,7 +64,7 @@ pub fn connect(
     rpc::ensure_daemon(
         &rpc::socket_path(),
         decoy_app::VERSION,
-        &|| rpc::spawn_detached(&daemon_exe().map_err(std::io::Error::other)?),
+        &spawn_daemon,
         on_event,
         on_close,
     )

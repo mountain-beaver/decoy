@@ -431,9 +431,18 @@ impl Client {
 
 // ============================================================ starting daemons
 
+/// Tells the daemon which command opens the window (see [`spawn_detached_with`]).
+pub const ENV_UI: &str = "DECOY_UI";
+
 /// Start `exe` fully detached: its own session, no terminal, no stdio.
 pub fn spawn_detached(exe: &Path) -> io::Result<()> {
+    spawn_detached_with(exe, &[])
+}
+
+/// [`spawn_detached`] with extra environment variables for the child.
+pub fn spawn_detached_with(exe: &Path, env: &[(&str, &std::ffi::OsStr)]) -> io::Result<()> {
     let mut cmd = Command::new(exe);
+    cmd.envs(env.iter().copied());
     cmd.stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
