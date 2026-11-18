@@ -7,11 +7,13 @@ pub mod error;
 pub mod games;
 mod http;
 pub mod ipc;
+#[cfg(windows)]
+mod pipe;
 pub mod presence;
 pub mod store;
 mod util;
 
-#[cfg(all(test, unix))]
+#[cfg(test)]
 mod testutil;
 
 pub use discord_api::{AppInfo, Asset};

@@ -22,7 +22,7 @@ const MAX_PAYLOAD: usize = 1 << 20;
 #[cfg(unix)]
 type Stream = std::os::unix::net::UnixStream;
 #[cfg(windows)]
-type Stream = std::fs::File;
+type Stream = crate::pipe::PipeStream;
 
 #[derive(Debug, Clone)]
 pub struct ConnectOptions {
@@ -133,11 +133,8 @@ fn open_stream(path: &std::path::Path, timeout: Duration) -> std::io::Result<Str
 }
 
 #[cfg(windows)]
-fn open_stream(path: &std::path::Path, _timeout: Duration) -> std::io::Result<Stream> {
-    std::fs::OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(path)
+fn open_stream(path: &std::path::Path, timeout: Duration) -> std::io::Result<Stream> {
+    Stream::open(path, timeout)
 }
 
 static NONCE: AtomicU64 = AtomicU64::new(0);
@@ -272,10 +269,24 @@ impl Client {
         }
     }
 
-    /// Cheap liveness check: writing a PING fails once the pipe is closed.
+    /// Cheap liveness check: fails with `Disconnected` when the peer is gone.
+    /// Answers a pending PING if Discord sent one.
     #[cfg(windows)]
     pub fn poll(&mut self) -> Result<()> {
-        write_frame(&mut self.stream, OP_PING, b"{}")
+        loop {
+            match self.stream.available() {
+                Err(_) => return Err(Error::Disconnected),
+                Ok(0) => return Ok(()),
+                Ok(_) => {}
+            }
+            // An unsolicited frame is waiting. A partial one is bounded by the read timeout.
+            let (op, payload) = read_frame(&mut self.stream)?;
+            match op {
+                OP_PING => write_frame(&mut self.stream, OP_PONG, &payload)?,
+                OP_CLOSE => return Err(Error::Disconnected),
+                _ => {}
+            }
+        }
     }
 }
 
@@ -283,10 +294,10 @@ fn parse(payload: &[u8]) -> Result<Value> {
     serde_json::from_slice(payload).map_err(|e| Error::Protocol(format!("invalid JSON: {e}")))
 }
 
-#[cfg(all(test, unix))]
+#[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testutil::{Mock, MockConfig, USER_ID};
+    use crate::testutil::{endpoint, Mock, MockConfig, USER_ID};
     use std::io::Cursor;
 
     const ID: &str = "123456789012345678";
@@ -463,7 +474,7 @@ mod tests {
         ));
         let dir = tempfile::tempdir().unwrap();
         let o = ConnectOptions {
-            paths: Some(vec![dir.path().join("discord-ipc-0")]),
+            paths: Some(vec![endpoint(dir.path(), "discord-ipc-0")]),
             ..Default::default()
         };
         assert!(matches!(
@@ -477,12 +488,22 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mock = Mock::start(dir.path(), MockConfig::default());
         let o = ConnectOptions {
-            paths: Some(vec![dir.path().join("missing"), mock.path.clone()]),
+            paths: Some(vec![endpoint(dir.path(), "missing"), mock.path.clone()]),
             ..Default::default()
         };
         assert!(Client::connect(ID, &o).is_ok());
     }
 
+    #[cfg(windows)]
+    #[test]
+    fn default_candidates_are_the_ten_discord_pipes() {
+        let paths = default_paths();
+        assert_eq!(paths.len(), 10);
+        assert_eq!(paths[0], PathBuf::from(r"\\.\pipe\discord-ipc-0"));
+        assert_eq!(paths[9], PathBuf::from(r"\\.\pipe\discord-ipc-9"));
+    }
+
+    #[cfg(unix)]
     #[test]
     fn default_candidates_cover_all_bases_and_subdirs() {
         let paths = default_paths();

@@ -42,8 +42,8 @@ jobs:
 
       - run: cargo fmt --all --check
 
-      # The core and the shared app logic. Tests that need a fake Discord on a
-      # Unix socket run on Linux and macOS only.
+      # The core and the shared app logic. The tests talk to a fake Discord over
+      # the real transport: a Unix socket, or a named pipe on Windows.
       - run: cargo test -p decoy-core -p decoy-app
       - run: cargo clippy -p decoy-core -p decoy-app --all-targets -- -D warnings
 

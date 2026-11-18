@@ -369,11 +369,11 @@ impl Worker {
     }
 }
 
-#[cfg(all(test, unix))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::presence::{Presence, TimestampMode};
-    use crate::testutil::{Mock, MockConfig};
+    use crate::testutil::{endpoint, Mock, MockConfig};
     use std::sync::mpsc::Receiver;
 
     const ID: &str = "123456789012345678";
@@ -520,7 +520,7 @@ mod tests {
     #[test]
     fn waits_for_discord_and_recovers_when_the_socket_appears() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("discord-ipc-0");
+        let path = endpoint(dir.path(), "discord-ipc-0");
         let (engine, rx) = spawn(path.clone());
         engine.apply(presence("late"), 0);
         wait_for(&rx, |s| *s == EngineState::WaitingForDiscord);

@@ -1,6 +1,6 @@
-//! Scriptable mock Discord IPC server on a Unix socket, for tests only.
+//! Scriptable mock Discord IPC server, for tests only: a Unix socket, or a
+//! named pipe on Windows.
 
-use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
@@ -32,9 +32,71 @@ pub struct Received {
     pub value: Value,
 }
 
+#[cfg(unix)]
+mod net {
+    use std::io;
+    use std::os::unix::net::{UnixListener, UnixStream};
+    use std::path::{Path, PathBuf};
+
+    pub type Conn = UnixStream;
+    pub struct Listener(UnixListener);
+
+    impl Listener {
+        pub fn bind(path: &Path) -> io::Result<Listener> {
+            UnixListener::bind(path).map(Listener)
+        }
+        pub fn accept(&self) -> io::Result<Conn> {
+            self.0.accept().map(|(conn, _)| conn)
+        }
+    }
+
+    pub fn dup(conn: &Conn) -> Conn {
+        conn.try_clone().unwrap()
+    }
+    pub fn close(conn: &Conn) {
+        let _ = conn.shutdown(std::net::Shutdown::Both);
+    }
+    /// Unblock a pending `accept`.
+    pub fn wake(path: &Path) {
+        let _ = UnixStream::connect(path);
+    }
+    pub fn endpoint(dir: &Path, name: &str) -> PathBuf {
+        dir.join(name)
+    }
+}
+
+#[cfg(windows)]
+mod net {
+    use std::path::{Path, PathBuf};
+
+    pub use crate::pipe::server::{Conn, Listener};
+
+    pub fn dup(conn: &Conn) -> Conn {
+        conn.clone()
+    }
+    pub fn close(conn: &Conn) {
+        conn.close();
+    }
+    /// Unblock a pending `accept`.
+    pub fn wake(path: &Path) {
+        let _ = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(path);
+    }
+    /// Pipes live in one flat namespace; the temp dir's name keeps tests apart.
+    pub fn endpoint(dir: &Path, name: &str) -> PathBuf {
+        let unique = dir.file_name().unwrap_or_default().to_string_lossy();
+        PathBuf::from(format!(r"\\.\pipe\decoy-test-{unique}-{name}"))
+    }
+}
+
+pub use net::endpoint;
+use net::Conn;
+
 struct Shared {
     cfg: Mutex<MockConfig>,
-    conns: Mutex<Vec<UnixStream>>,
+    conns: Mutex<Vec<Conn>>,
     stop: AtomicBool,
 }
 
@@ -49,11 +111,11 @@ pub const USER_ID: &str = "42";
 
 impl Mock {
     pub fn start(dir: &Path, cfg: MockConfig) -> Mock {
-        Mock::start_at(dir.join("discord-ipc-0"), cfg)
+        Mock::start_at(endpoint(dir, "discord-ipc-0"), cfg)
     }
 
     pub fn start_at(path: PathBuf, cfg: MockConfig) -> Mock {
-        let listener = UnixListener::bind(&path).unwrap();
+        let listener = net::Listener::bind(&path).unwrap();
         let shared = Arc::new(Shared {
             cfg: Mutex::new(cfg),
             conns: Mutex::new(Vec::new()),
@@ -63,12 +125,13 @@ impl Mock {
         let sh = shared.clone();
         let thread = thread::spawn(move || {
             let mut n = 0;
-            for conn in listener.incoming() {
+            loop {
+                let conn = listener.accept();
                 if sh.stop.load(Ordering::SeqCst) {
                     break;
                 }
                 let Ok(conn) = conn else { continue };
-                sh.conns.lock().unwrap().push(conn.try_clone().unwrap());
+                sh.conns.lock().unwrap().push(net::dup(&conn));
                 let (sh, tx) = (sh.clone(), tx.clone());
                 thread::spawn(move || handle(conn, n, sh, tx));
                 n += 1;
@@ -89,7 +152,7 @@ impl Mock {
     /// Shut down every accepted connection (the listener keeps accepting).
     pub fn kick(&self) {
         for c in self.shared.conns.lock().unwrap().drain(..) {
-            let _ = c.shutdown(std::net::Shutdown::Both);
+            net::close(&c);
         }
     }
 
@@ -130,7 +193,7 @@ impl Mock {
 impl Drop for Mock {
     fn drop(&mut self) {
         self.shared.stop.store(true, Ordering::SeqCst);
-        let _ = UnixStream::connect(&self.path); // wake accept()
+        net::wake(&self.path);
         self.kick();
         if let Some(t) = self.thread.take() {
             let _ = t.join();
@@ -138,7 +201,7 @@ impl Drop for Mock {
     }
 }
 
-fn handle(mut s: UnixStream, conn: usize, sh: Arc<Shared>, tx: Sender<Received>) {
+fn handle(mut s: Conn, conn: usize, sh: Arc<Shared>, tx: Sender<Received>) {
     let report = |op: u32, payload: &[u8]| {
         let value = serde_json::from_slice(payload).unwrap_or(Value::Null);
         let _ = tx.send(Received { conn, op, value });
@@ -171,7 +234,7 @@ fn handle(mut s: UnixStream, conn: usize, sh: Arc<Shared>, tx: Sender<Received>)
         }
         let cfg = sh.cfg.lock().unwrap().clone();
         if cfg.drop_on_set {
-            let _ = s.shutdown(std::net::Shutdown::Both);
+            net::close(&s);
             return;
         }
         if cfg.ping_before_reply {
