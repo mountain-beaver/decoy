@@ -55,6 +55,9 @@ pub struct Store {
     data: Mutex<Data>,
 }
 
+/// Largest text accepted as an exported profile.
+pub const MAX_IMPORT_BYTES: usize = 256 * 1024;
+
 impl Store {
     /// Open the store in the platform config directory.
     pub fn open_default() -> Result<Store> {
@@ -180,6 +183,12 @@ impl Store {
 
     /// Add a profile from exported JSON under a fresh id.
     pub fn import_profile(&self, json: &str) -> Result<Profile> {
+        // A profile is a few hundred bytes of text.
+        if json.len() > MAX_IMPORT_BYTES {
+            return Err(Error::Invalid(
+                "not a Decoy profile: the file is too large".into(),
+            ));
+        }
         let mut p: Profile = serde_json::from_str(json)
             .map_err(|e| Error::Invalid(format!("not a Decoy profile: {e}")))?;
         if p.name.trim().is_empty() && p.presence.app_id.trim().is_empty() {
@@ -321,5 +330,15 @@ mod tests {
     fn ids_are_unique() {
         let ids: std::collections::HashSet<_> = (0..1000).map(|_| new_id()).collect();
         assert_eq!(ids.len(), 1000);
+    }
+
+    #[test]
+    fn import_refuses_a_huge_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path()).unwrap();
+        let big = format!(r#"{{"name":"{}"}}"#, "x".repeat(MAX_IMPORT_BYTES));
+        let e = store.import_profile(&big).unwrap_err();
+        assert!(e.to_string().contains("too large"), "{e}");
+        assert!(store.profiles().is_empty());
     }
 }

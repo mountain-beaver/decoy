@@ -406,6 +406,11 @@ impl Client {
         let (tx, rx) = channel();
         lock(&inner.pending).insert(id, tx);
         let line = encode(&json!({ "id": id, "cmd": cmd, "args": args }));
+        // The daemon drops a connection that sends a longer line.
+        if line.len() as u64 >= MAX_LINE {
+            lock(&inner.pending).remove(&id);
+            return Err("That is too much data for one request".into());
+        }
         if lock(&inner.writer).write_all(&line).is_err() {
             lock(&inner.pending).remove(&id);
             return Err(MSG_GONE.into());

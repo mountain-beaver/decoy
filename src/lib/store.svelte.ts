@@ -309,6 +309,11 @@ class AppStore {
   }
 
   async importFile(file: File) {
+    // An exported profile is a few hundred bytes; anything big is the wrong file.
+    if (file.size > 256 * 1024) {
+      this.toast('That file is too large to be a Decoy profile.', 'error');
+      return;
+    }
     try {
       const json = await file.text();
       await this.flush();
