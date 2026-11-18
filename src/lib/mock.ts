@@ -12,17 +12,18 @@ const FAST = typeof location !== 'undefined' && new URLSearchParams(location.sea
 const wait = (ms: number) => (FAST ? Promise.resolve() : new Promise((r) => setTimeout(r, ms)));
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v));
 
+// Invented titles: the mock must not look like it ships anyone's catalogue.
 const NAMES = [
-  'Grand Theft Auto VI', 'Visual Studio Code', 'Minecraft', 'Stardew Valley', 'Hollow Knight', 'Celeste',
-  'Factorio', 'Terraria', 'Rocket League', 'Counter-Strike 2', 'Dota 2', 'Elden Ring', 'Hades II',
-  'Baldur\'s Gate 3', 'Cyberpunk 2077', 'The Witcher 3: Wild Hunt', 'Portal 2', 'Half-Life 2', 'Valheim',
-  'Satisfactory', 'Disco Elysium', 'Dead Cells', 'Slay the Spire', 'Hades', 'Subnautica', 'RimWorld',
-  'Cities: Skylines', 'Euro Truck Simulator 2', 'Apex Legends', 'Overwatch 2', 'Fortnite', 'League of Legends',
-  'Valorant', 'Among Us', 'Fall Guys', 'Sea of Thieves', 'Lethal Company', 'Balatro', 'Helldivers 2', 'Blender',
+  'Skyline Racer', 'Neon Harbor', 'Paper Kingdoms', 'Deep Field', 'Lantern Keep', 'Moss and Iron',
+  'Orbit Garden', 'Rookfall', 'Tidewalker', 'Copper Sky', 'Night Bus Tycoon', 'Glasshouse', 'Hollow Pines',
+  'Starling Cup', 'Quiet Signal', 'Brass Atlas', 'Salt Road', 'Thimble', 'Second Summer', 'Kiln',
+  'Low Tide Detective', 'Foxglove', 'Ninety Mile Beach', 'Switchback', 'Paperweight', 'Cold Harbour Radio',
+  'Meridian', 'Snowline Express', 'Pocket Orchestra', 'Greenhouse Wars', 'Dustjacket', 'Signal Fire',
+  'Marrow Deep', 'Clockmaker\'s Apprentice', 'Sky Ferry', 'Tin Soldiers', 'Harbor Lights', 'Inkwell', 'Longboat', 'Sketchpad',
 ];
-const GTA_ID = '1445160676522856458';
+const FIRST_ID = '1300000000000000042';
 const OWN_ID = '1100000000000000001';
-const idFor = (i: number) => (i === 0 ? GTA_ID : (1300000000000000000n + BigInt(i) * 90210012345n).toString());
+const idFor = (i: number) => (i === 0 ? FIRST_ID : (1300000000000000000n + BigInt(i) * 90210012345n).toString());
 const GAMES: GameHit[] = NAMES.map((name, i) => ({ id: idFor(i), name, icon_url: null }));
 
 function svgAsset(a: string, b: string, glyph: string): string {
@@ -93,11 +94,11 @@ export function createMock(): Backend {
 
   const profiles: Profile[] = empty ? [] : [
     {
-      id: 'p-gta', name: 'Grand Theft Auto VI',
+      id: 'p-race', name: 'Skyline Racer',
       presence: {
-        ...emptyPresence(), app_id: GTA_ID, details: 'Story Mode', state: 'Vice City, Leonida',
+        ...emptyPresence(), app_id: FIRST_ID, details: 'Racing, lap 3', state: 'In a lobby',
         party: { current: 2, max: 4 }, timestamps: { mode: 'since_connect' },
-        large_image: { source: 'cover', text: 'Vice City at dusk', url: null },
+        large_image: { source: 'cover', text: 'Harbor circuit at dusk', url: null },
         small_image: { source: 'star', text: 'Level 12', url: null },
         buttons: [
           { label: 'Watch trailer', url: 'https://example.com/trailer' },
@@ -115,7 +116,7 @@ export function createMock(): Backend {
     {
       id: 'p-movie', name: 'Movie night',
       presence: {
-        ...emptyPresence(), app_id: OWN_ID, kind: 'watching', name: 'Movie night', details: 'Dune: Part Two',
+        ...emptyPresence(), app_id: OWN_ID, kind: 'watching', name: 'Movie night', details: 'The Lighthouse Keepers',
         state: 'With the group', timestamps: { mode: 'custom', start_ms: now - 20 * 60e3, end_ms: now + 110 * 60e3 },
         large_image: { source: 'poster', text: 'Tonight', url: null }, small_image: { source: 'popcorn', text: null, url: null },
       },
@@ -123,7 +124,8 @@ export function createMock(): Backend {
   ];
 
   let settings: Settings = {
-    active_profile: empty ? null : 'p-gta', connect_on_launch: true, start_in_tray: false, autostart: false,
+    active_profile: empty ? null : 'p-race', connect_on_launch: true, start_in_tray: false, autostart: false,
+    skip_update_check: false,
   };
   let games: GamesInfo = gamesMode === 'loading'
     ? { count: 0, fetched_at: null, loading: true, error: null }
@@ -234,6 +236,11 @@ export function createMock(): Backend {
     },
     async setSettings(s) { settings = clone(s); },
     async openExternal(url) { window.open(url, '_blank', 'noopener'); },
+    // ?update=0.2.0 shows the new version notice
+    async checkUpdate() {
+      const v = q.get('update');
+      return v && !settings.skip_update_check ? { version: v, url: `https://github.com/mountain-beaver/decoy/releases/tag/v${v}` } : null;
+    },
     async onEngineState(cb) { engineCbs.add(cb); return () => engineCbs.delete(cb); },
     async onAppState(cb) { appCbs.add(cb); return () => appCbs.delete(cb); },
   };
