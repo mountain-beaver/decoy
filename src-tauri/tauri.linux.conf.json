@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeBuildCommand": "bash scripts/prepare-daemon.sh && pnpm build"
+  },
+  "bundle": {
+    "externalBin": [
+      "binaries/decoy-daemon"
+    ]
+  }
+}
