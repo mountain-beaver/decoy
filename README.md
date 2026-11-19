@@ -1,3 +1,5 @@
+<p align="center"><b>English</b> · <a href="docs/README.ru.md">Русский</a> · <a href="docs/README.pt-BR.md">Português</a> · <a href="docs/README.es.md">Español</a> · <a href="docs/README.fr.md">Français</a> · <a href="docs/README.de.md">Deutsch</a></p>
+
 <p align="center">
   <img src="assets/icon.svg" width="112" alt="The Decoy logo: a white duck with a yellow beak">
 </p>
