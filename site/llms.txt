@@ -1,0 +1,29 @@
+# Decoy
+
+> Decoy is a free, open source desktop app that sets a custom Discord status (Discord Rich Presence). It shows any game, or your own name, text, pictures and up to two link buttons, on your Discord profile. It runs on Windows 10 and 11, macOS 10.15 or newer (Intel and Apple Silicon) and Linux.
+
+Decoy is a cross-platform alternative to CustomRP, which is for Windows only. It needs the Discord desktop app running on the same computer. It never asks for a Discord password or token: it talks to the local Discord app the same way games do. There is no account, no analytics and no paid version. License: MIT.
+
+Typical uses:
+
+- Show a game you are not playing, picked from Discord's own list of about 25,000 games, with its real name and icon.
+- Put a button on your profile that opens an invite to your Discord server.
+- Link a stream, a playlist, a YouTube channel or a website from your profile.
+- Use your own name, pictures and text through your own Discord application; a built-in guide walks through the Discord Developer Portal.
+
+How to add a server link button: copy an invite link that never expires from your server (Invite People, Edit invite link), then in Decoy open Buttons, press Add button, type a label such as "Join my server", paste the invite into Link and switch on "Showing in Discord". You cannot click your own button; other people can.
+
+## Links
+
+- [Website](https://mountain-beaver.github.io/decoy/): overview, download buttons, questions and answers
+- [Source code and README](https://github.com/mountain-beaver/decoy): features, install help, privacy
+- [Latest release](https://github.com/mountain-beaver/decoy/releases/latest): installers for every system
+- [Developer notes](https://github.com/mountain-beaver/decoy/blob/main/docs/DEVELOPMENT.md): how it is built, how to build it from source
+
+## Downloads
+
+- [Windows installer](https://github.com/mountain-beaver/decoy/releases/latest/download/Decoy-windows-x64-setup.exe)
+- [macOS disk image, universal](https://github.com/mountain-beaver/decoy/releases/latest/download/Decoy-darwin-universal.dmg)
+- [Linux AppImage](https://github.com/mountain-beaver/decoy/releases/latest/download/Decoy-linux-amd64.AppImage)
+- [Linux .deb](https://github.com/mountain-beaver/decoy/releases/latest/download/Decoy-linux-amd64.deb)
+- [Linux .rpm](https://github.com/mountain-beaver/decoy/releases/latest/download/Decoy-linux-x86_64.rpm)
