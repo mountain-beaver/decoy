@@ -1,0 +1,31 @@
+name: Something does not work
+description: Decoy does not start, the status does not show, or something looks wrong.
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Describe it in your own words. A screenshot helps a lot, you can paste it right here.
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Your computer
+      options:
+        - Windows
+        - Mac
+        - Linux
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: What does Decoy show at the top, next to "Guide"?
+      options:
+        - Connected
+        - Waiting for Discord
+        - Not connected
+        - Something else or I am not sure
+  - type: input
+    attributes:
+      label: Decoy version
+      description: Open Settings (the gear). The version is at the bottom.

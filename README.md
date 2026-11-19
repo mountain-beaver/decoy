@@ -29,6 +29,8 @@
   </picture>
 </p>
 
+Decoy is a free, open source app for custom Discord Rich Presence. It sets your Discord activity status (the "Playing…" line under your name) to any game, or to your own name, text, pictures and buttons. If you know CustomRP for Windows, Decoy does the same job and also runs on Mac and Linux.
+
 ## What your friends see
 
 <p align="center">
@@ -123,6 +125,10 @@ Yes, with your own application: **Guide**, then **Own app**.
 Decoy has no account, no analytics and no server of its own. Your profiles are saved only on your computer.
 
 It connects to the internet for two things: to Discord, to load the game list, names and pictures, and to GitHub, at most twice a day, to see whether a newer version exists. It only shows you a link and never downloads anything by itself. You can switch that check off in **Settings**.
+
+## Like it?
+
+Give the repository a star at the top of this page. It costs nothing and helps other people find Decoy. Found a bug or have an idea? [Tell me here](https://github.com/mountain-beaver/decoy/issues/new/choose), no technical details needed.
 
 ## For developers
 

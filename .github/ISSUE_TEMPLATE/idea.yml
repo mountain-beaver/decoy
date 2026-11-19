@@ -1,0 +1,10 @@
+name: An idea
+description: Something Decoy could do better or does not do yet.
+labels: [enhancement]
+body:
+  - type: textarea
+    attributes:
+      label: What would you like?
+      description: Say what you were trying to do. That helps more than a ready solution.
+    validations:
+      required: true
