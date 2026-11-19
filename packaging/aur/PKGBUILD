@@ -1,0 +1,22 @@
+# Maintainer: mountain-beaver <130703526+mountain-beaver at users dot noreply dot github dot com>
+pkgname=decoy-bin
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Custom Discord Rich Presence: show any game, your own text, pictures and buttons as your Discord status"
+arch=('x86_64')
+url="https://github.com/mountain-beaver/decoy"
+license=('MIT')
+depends=('webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator')
+provides=('decoy')
+conflicts=('decoy')
+source=("decoy-$pkgver.deb::$url/releases/download/v$pkgver/Decoy-linux-amd64.deb"
+        "LICENSE-$pkgver::https://raw.githubusercontent.com/mountain-beaver/decoy/v$pkgver/LICENSE")
+noextract=("decoy-$pkgver.deb")
+sha256sums=('014dd611974077fc0a57254d66255678c6c77f2f11c99dc20ac07fad1ee39659'
+            '1e3a9dbc8af4e2097920572f0ad4535b9f00c9eb79b3fd718c3acb369a073559')
+
+package() {
+  # The .deb is an ar archive; its data.tar.* holds the files as they are installed.
+  bsdtar -xOf "decoy-$pkgver.deb" 'data.tar.*' | bsdtar -xf - -C "$pkgdir"
+  install -Dm644 "LICENSE-$pkgver" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
