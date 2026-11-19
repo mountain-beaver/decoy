@@ -49,6 +49,8 @@ h1, h2, h3, p { margin: 0; }
   display: block; flex: none; border-radius: 22%; object-fit: cover;
   background: linear-gradient(140deg, hsl(var(--h, 330) 98% 76%), hsl(calc(var(--h, 330) + 38) 82% 62%) 58%, hsl(calc(var(--h, 330) + 72) 52% 28%));
 }
+/* A real icon may be transparent: Discord shows it as is, without a backdrop. */
+img.tile { background: none; }
 
 /* ---------- status, switch ---------- */
 .status { display: flex; align-items: center; gap: 7px; color: var(--muted); white-space: nowrap; min-width: 0; }
