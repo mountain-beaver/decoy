@@ -813,7 +813,6 @@ dependencies = [
  "ksni",
  "png",
  "serde_json",
- "tempfile",
 ]
 
 [[package]]

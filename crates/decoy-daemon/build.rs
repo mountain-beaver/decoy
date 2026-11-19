@@ -19,13 +19,19 @@ fn main() {
     let mut argb = Vec::with_capacity((info.width * info.height * 4) as usize);
     match info.color_type {
         png::ColorType::Rgba => px
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .for_each(|p| argb.extend_from_slice(&[p[3], p[0], p[1], p[2]])),
         png::ColorType::Rgb => px
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .for_each(|p| argb.extend_from_slice(&[255, p[0], p[1], p[2]])),
         png::ColorType::GrayscaleAlpha => px
-            .chunks_exact(2)
+            .as_chunks::<2>()
+            .0
+            .iter()
             .for_each(|p| argb.extend_from_slice(&[p[1], p[0], p[0], p[0]])),
         png::ColorType::Grayscale => px
             .iter()
