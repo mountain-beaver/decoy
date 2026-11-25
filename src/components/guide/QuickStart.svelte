@@ -1,6 +1,7 @@
 <script lang="ts">
   import { guide } from '../../lib/guide.svelte';
   import StepHead from './StepHead.svelte';
+  import { app } from '../../lib/store.svelte';
 
   const cur = $derived(guide.step(1));
   const set = (n: number) => guide.setStep(1, n);
@@ -16,10 +17,18 @@
     <div class="sb"><p>Fill in "Details" and "State". Details is the first line, for example "Racing, lap 3". State is the second, for example "In a lobby".</p></div>
   </li>
   <li>
-    <StepHead n={3} title="Switch it on" current={cur === 3} onclick={() => set(3)} />
+    <StepHead n={3} title="Press Show in Discord" current={cur === 3} onclick={() => set(3)} />
     <div class="sb">
-      <p>Turn on "Showing in Discord" in the top bar. Discord has to be running on this computer.</p>
-      <div class="acts"><button type="button" class="btn primary" onclick={() => guide.close()}>Back to editor</button></div>
+      <p>Nothing appears on your profile until you do this. Press the "Show in Discord" button in the band above the editor, or the switch in the top right corner. It then reads "Showing in Discord".</p>
+      <p>Keep the Discord desktop app open on this computer. Decoy can stay in the tray.</p>
+      <div class="acts">
+        {#if app.draft && !app.showing}
+          <button type="button" class="btn primary" onclick={() => { void app.setShowing(true); guide.close(); }}>Show in Discord</button>
+          <button type="button" class="btn" onclick={() => guide.close()}>Back to editor</button>
+        {:else}
+          <button type="button" class="btn primary" onclick={() => guide.close()}>Back to editor</button>
+        {/if}
+      </div>
     </div>
   </li>
 </ol>

@@ -118,7 +118,12 @@
   {#if !live}
     <p class="caption">This is how your presence will look. Pick a game to start.</p>
   {:else if !app.showing}
-    <p class="caption">Hidden. Switch on "Showing in Discord" to share this.</p>
+    <p class="caption">Only a preview for now. Press "Show in Discord" at the top to put it on your profile.</p>
+  {:else if app.engine.status === 'active'}
+    <div class="go">
+      <p class="caption live"><i></i>On your profile now</p>
+      <button type="button" class="link" onclick={() => app.setShowing(false)}>Stop showing</button>
+    </div>
   {/if}
 </aside>
 
@@ -129,4 +134,7 @@
   }
   .lab { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
   .side .dc { padding: 10px; }
+  .go { display: flex; flex-direction: column; gap: 8px; }
+  .live { display: flex; align-items: center; gap: 7px; color: var(--ink); font-weight: 500; }
+  .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
 </style>

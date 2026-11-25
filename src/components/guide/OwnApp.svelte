@@ -32,7 +32,7 @@
     const name = entry.name ?? id;
     await app.pickGame({ id, name, icon_url: entry.icon_url ?? null }, 'own');
     guide.close();
-    app.toast(app.showing ? `Now showing as ${name}` : `${name} is set. Switch on "Showing in Discord" to share it.`);
+    app.toast(app.showing ? `Now showing as ${name}` : `${name} is set. Press "Show in Discord" to share it.`);
   }
 </script>
 

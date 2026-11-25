@@ -19,7 +19,7 @@
   ];
   const timers = [
     ['Off', 'No timer.'],
-    ['Since I turned it on', 'Counts up from the moment you switch on "Showing in Discord".'],
+    ['Since I turned it on', 'Counts up from the moment you press "Show in Discord".'],
     ['Since last change', 'Starts over whenever you edit the profile.'],
     ['Time of day', 'Counts up from midnight, so it reads like a clock.'],
     ['Custom', 'Pick a start, an end or both. With an end it counts down.'],

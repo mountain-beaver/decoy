@@ -57,7 +57,7 @@ Das sind Ausschnitte aus einem echten Discord-Fenster, Name und Avatar sind ausg
 1. **Lade Decoy herunter** mit einem der Buttons oben und öffne es. Beim ersten Mal fragt Windows oder macOS vielleicht, ob du der App vertraust: [was du drücken musst](#install).
 2. **Such ein Spiel aus.** Fang an, den Namen zu tippen, und wähl es aus der Liste.
 3. **Schreib deinen Text**, wenn du magst: zwei Zeilen, einen Timer, einen Button. Die Vorschau rechts zeigt, was die anderen sehen werden.
-4. **Schalte „Showing in Discord“** (**Showing in Discord** heißt „In Discord anzeigen“) oben rechts ein. Das war's.
+4. **Klicke auf „Show in Discord“** („In Discord anzeigen“). Das ist der gelbe Knopf im Streifen über dem Editor (oder der Schalter oben rechts). Solange du nicht klickst, erscheint nichts in deinem Profil. Wenn es läuft, steht auf dem Schalter „Showing in Discord“.
 
 Discord muss auf demselben Computer geöffnet sein (die App, nicht die Website). Du kannst das Decoy-Fenster schließen: Es läuft im Tray weiter, neben der Uhr.
 
@@ -75,7 +75,7 @@ Discord muss auf demselben Computer geöffnet sein (die App, nicht die Website).
 1. Öffne in Discord deinen Server, klick oben auf seinen Namen und wähl **Leute einladen**. Klick auf **Edit invite link** (Einladungslink bearbeiten), stell ein, dass er nie abläuft, und kopier den Link.
 2. Scroll in Decoy nach unten zu **Buttons** und drück auf **Add button** (Button hinzufügen).
 3. Schreib bei **Label** (Beschriftung), was auf dem Button stehen soll, zum Beispiel `Tritt meinem Server bei`. Füg bei **Link** deine Einladung ein.
-4. Achte darauf, dass **Showing in Discord** eingeschaltet ist.
+4. Achte darauf, dass auf dem Schalter oben rechts **Showing in Discord** steht. Steht dort **Show in Discord**, klicke darauf.
 
 Gut zu wissen:
 
@@ -114,9 +114,10 @@ Decoy muss laufen, aber du kannst sein Fenster schließen: Es bleibt im Tray. Da
 Decoy läuft auf einem Computer, neben der Discord-Desktop-App. Leute am Handy sehen deinen Status trotzdem.
 
 **In Discord erscheint nichts. Was prüfe ich?**
-1. Die Discord-Desktop-App läuft auf demselben Computer.
-2. In Discord unter **Benutzereinstellungen**, **Activity Privacy** (Aktivitätsprivatsphäre): Das Teilen deiner Aktivität ist eingeschaltet.
-3. Dein Status ist nicht auf **Unsichtbar** gestellt.
+1. In Decoy steht auf dem Schalter oben rechts **Showing in Discord**. Steht dort **Show in Discord**, klicke darauf.
+2. Die Discord-Desktop-App läuft auf demselben Computer.
+3. In Discord unter **Benutzereinstellungen**, **Activity Privacy** (Aktivitätsprivatsphäre): Das Teilen deiner Aktivität ist eingeschaltet.
+4. Dein Status ist nicht auf **Unsichtbar** gestellt.
 
 In Decoy gibt es eine längere Checkliste: **Guide**, dann **Not showing** (wird nicht angezeigt).
 

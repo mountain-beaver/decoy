@@ -762,7 +762,7 @@ dependencies = [
 
 [[package]]
 name = "decoy"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "decoy-app",
  "decoy-core",
@@ -782,7 +782,7 @@ dependencies = [
 
 [[package]]
 name = "decoy-app"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "decoy-core",
@@ -794,7 +794,7 @@ dependencies = [
 
 [[package]]
 name = "decoy-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "directories",
  "serde",
@@ -806,7 +806,7 @@ dependencies = [
 
 [[package]]
 name = "decoy-daemon"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "decoy-app",
  "decoy-core",

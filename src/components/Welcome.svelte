@@ -12,7 +12,7 @@
     <i class="tile" style="--h:330"></i><i class="tile" style="--h:185"></i><i class="tile" style="--h:28"></i>
   </div>
   <h1>What are you playing?</h1>
-  <p class="lead">Pick a game and Decoy shows it on your Discord profile, with your own text, timer and buttons. You can change everything afterwards.</p>
+  <p class="lead">Pick a game, add your own text if you like, then press "Show in Discord". Decoy puts it on your Discord profile. You can change everything afterwards.</p>
   {#if own}
     <OwnIdStart onback={() => (own = false)} />
     <button type="button" class="link" onclick={() => guide.show(2)}>How do I get my own?</button>

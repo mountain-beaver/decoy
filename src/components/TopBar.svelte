@@ -47,9 +47,10 @@
   {:else}
     <button type="button" class="gbtn" onclick={() => guide.show()}>Guide</button>
   {/if}
-  <button type="button" class="switch" role="switch" aria-checked={app.showing} disabled={!app.draft}
+  <button type="button" class="switch" class:ready={!app.showing && !!app.draft} role="switch" aria-checked={app.showing} disabled={!app.draft}
+    title={app.showing ? 'Click to stop showing it' : 'Click to show it on your Discord profile'}
     onclick={() => app.setShowing(!app.showing)}>
-    <i></i><span>{app.showing ? 'Showing in Discord' : 'Hidden'}</span>
+    <i></i><span>{app.showing ? 'Showing in Discord' : 'Show in Discord'}</span>
   </button>
   <button type="button" class="icon-btn" aria-label="Settings" title="Settings" onclick={() => (app.settingsOpen = true)}>
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.2 2.5h3.6l.5 2.1c.5.2 1 .5 1.4.8l2-.7 1.8 3.1-1.6 1.4c.1.5.1 1.1 0 1.6l1.6 1.4-1.8 3.1-2-.7c-.4.3-.9.6-1.4.8l-.5 2.1H8.2l-.5-2.1c-.5-.2-1-.5-1.4-.8l-2 .7-1.8-3.1 1.6-1.4a5 5 0 0 1 0-1.6L2.5 7.8l1.8-3.1 2 .7c.4-.3.9-.6 1.4-.8l.5-2.1Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
@@ -66,6 +67,7 @@
   .back { padding: 5px 12px 5px 9px; white-space: nowrap; }
   .back svg { width: 10px; height: 10px; }
   .switch:disabled { opacity: .5; cursor: default; }
+  .switch.ready { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 45%, transparent); }
   .fix { background: none; border: 0; padding: 2px 0; color: var(--bad); font-weight: 600; white-space: nowrap; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
   .fix:hover { text-decoration-style: solid; }
   @media (max-width: 860px) { .top.inguide :global(.status span) { display: none; } }

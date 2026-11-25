@@ -16,12 +16,15 @@
       case 'failed':
         return { tone: 'bad', short: 'Refused', line: 'Right now: Discord refused the presence.', more: e.message };
       default:
-        return { tone: '', short: 'Off', line: 'Right now: Not connected.', more: 'Switch on "Showing in Discord" in the top bar.' };
+        return { tone: '', short: 'Off', line: 'Right now: Not connected.', more: 'Press "Show in Discord" above the editor or in the top right corner.' };
     }
   });
 
   const rows: { q: string; a: string[] }[] = [
     { q: 'Is Decoy connected to Discord?', a: [] },
+    { q: 'Is "Show in Discord" switched on?', a: [
+      'Nothing is shared until you press "Show in Discord". The switch in the top right corner then reads "Showing in Discord".',
+    ] },
     { q: 'Are you using the Discord desktop app?', a: [
       'Discord must be the desktop app, on the same computer as Decoy. The browser version cannot do this.',
     ] },

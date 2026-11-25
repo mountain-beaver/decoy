@@ -57,7 +57,7 @@ Estes são pedaços de uma janela real do Discord, com o nome e o avatar escondi
 1. **Baixe o Decoy** com um dos botões acima e abra o app. Na primeira vez, o Windows ou o macOS podem perguntar se você confia nele: [o que apertar](#install).
 2. **Escolha um jogo.** Comece a digitar o nome e escolha na lista.
 3. **Escreva o seu texto**, se quiser: duas linhas, um cronômetro, um botão. A prévia à direita mostra o que os outros vão ver.
-4. **Ligue a opção "Showing in Discord"** (**Showing in Discord** quer dizer "Aparecendo no Discord") no canto superior direito. Pronto.
+4. **Clique em "Show in Discord"** ("Mostrar no Discord"). É o botão amarelo na faixa acima do editor (ou a chave no canto superior direito). Até você clicar, nada aparece no seu perfil. Quando estiver funcionando, a chave mostra "Showing in Discord".
 
 O Discord precisa estar aberto no mesmo computador (o app, não o site). Você pode fechar a janela do Decoy: ele continua rodando na bandeja, perto do relógio.
 
@@ -75,7 +75,7 @@ O Discord precisa estar aberto no mesmo computador (o app, não o site). Você p
 1. No Discord, abra o seu servidor, clique no nome dele lá em cima e escolha **Convidar pessoas**. Clique em **Edit invite link** (editar link de convite), deixe o link sem data para expirar e copie o link.
 2. No Decoy, role para baixo até **Buttons** (botões) e aperte **Add button** (adicionar botão).
 3. Em **Label** (texto do botão), escreva o que o botão deve dizer, por exemplo `Entre no meu servidor`. Em **Link**, cole o seu convite.
-4. Confira se **Showing in Discord** está ligado.
+4. Confira se a chave no canto superior direito mostra **Showing in Discord**. Se mostrar **Show in Discord**, clique nela.
 
 Bom saber:
 
@@ -114,9 +114,10 @@ O Decoy precisa estar rodando, mas você pode fechar a janela dele: ele fica na 
 O Decoy roda em um computador, ao lado do app do Discord para desktop. Quem está no celular vai ver o seu status do mesmo jeito.
 
 **Nada aparece no Discord. O que eu confiro?**
-1. O app do Discord para desktop está rodando no mesmo computador.
-2. No Discord, em **Configurações de usuário**, **Activity Privacy** (privacidade de atividade): o compartilhamento da sua atividade está ligado.
-3. O seu status não está como **Invisível**.
+1. No Decoy, a chave no canto superior direito mostra **Showing in Discord**. Se mostrar **Show in Discord**, clique nela.
+2. O app do Discord para desktop está rodando no mesmo computador.
+3. No Discord, em **Configurações de usuário**, **Activity Privacy** (privacidade de atividade): o compartilhamento da sua atividade está ligado.
+4. O seu status não está como **Invisível**.
 
 Existe uma lista de checagem mais longa dentro do Decoy: **Guide** e depois **Not showing** (não está aparecendo).
 

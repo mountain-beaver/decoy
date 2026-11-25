@@ -27,7 +27,7 @@
   const hint = $derived.by(() => {
     switch (p.timestamps.mode) {
       case 'none': return 'No timer is shown.';
-      case 'since_connect': return 'Counts up from the moment you switched on "Showing in Discord".';
+      case 'since_connect': return 'Counts up from the moment you pressed "Show in Discord".';
       case 'since_update': return 'Starts again every time you change something.';
       case 'local_time': return 'Counts up from midnight, so it reads like the time of day.';
       default: return 'Start alone counts up. End, with or without a start, counts down.';

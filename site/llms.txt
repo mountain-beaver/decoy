@@ -11,7 +11,7 @@ Typical uses:
 - Link a stream, a playlist, a YouTube channel or a website from your profile.
 - Use your own name, pictures and text through your own Discord application; a built-in guide walks through the Discord Developer Portal.
 
-How to add a server link button: copy an invite link that never expires from your server (Invite People, Edit invite link), then in Decoy open Buttons, press Add button, type a label such as "Join my server", paste the invite into Link and switch on "Showing in Discord". You cannot click your own button; other people can.
+How to add a server link button: copy an invite link that never expires from your server (Invite People, Edit invite link), then in Decoy open Buttons, press Add button, type a label such as "Join my server", paste the invite into Link and press "Show in Discord". You cannot click your own button; other people can.
 
 ## Links
 

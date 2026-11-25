@@ -2,6 +2,13 @@
 
 Notable changes to Decoy. Versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.1.1
+
+- Clearer start. While nothing is shared, a band above the editor says so and has a "Show in Discord" button. The switch in the top bar now reads "Show in Discord" instead of "Hidden" and stands out until you press it.
+- Once your status is live, a band confirms it and links to the checklist for when it does not show up in Discord.
+- The preview says whether it is only a preview or already on your profile, with a way to stop showing it.
+- The quick start guide and its checklist explain the start button; the third step can start showing right away.
+
 ## 0.1.0
 
 First release.

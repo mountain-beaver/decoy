@@ -57,7 +57,7 @@ These are pieces of a real Discord window, with the name and avatar hidden. Your
 1. **Download Decoy** with a button above and open it. The first time, Windows or macOS may ask whether you trust it: [what to press](#install).
 2. **Pick a game.** Start typing its name and choose it from the list.
 3. **Write your text**, if you want: two lines, a timer, a button. The preview on the right shows what others will see.
-4. **Switch on "Showing in Discord"** at the top right. That's it.
+4. **Press "Show in Discord".** It is the yellow button in the band above the editor (or the switch at the top right). Until you press it, nothing appears on your profile. When it works, the switch reads "Showing in Discord".
 
 Discord has to be open on the same computer (the app, not the website). You can close the Decoy window: it keeps running in the tray, next to the clock.
 
@@ -73,7 +73,7 @@ Discord has to be open on the same computer (the app, not the website). You can 
 1. In Discord, open your server, click its name at the top and choose **Invite People**. Click **Edit invite link**, set it to never expire, and copy the link.
 2. In Decoy, scroll down to **Buttons** and press **Add button**.
 3. In **Label**, write what the button should say, for example `Join my server`. In **Link**, paste your invite.
-4. Make sure **Showing in Discord** is on.
+4. Make sure the switch at the top right reads **Showing in Discord**. If it says **Show in Discord**, press it.
 
 Good to know:
 
@@ -110,9 +110,10 @@ Decoy has to be running, but you can close its window: it stays in the tray. To 
 Decoy runs on a computer, next to the Discord desktop app. People on phones will still see your status.
 
 **Nothing shows up in Discord. What do I check?**
-1. The Discord desktop app is running on the same computer.
-2. In Discord, **User Settings**, **Activity Privacy**: sharing your activity is switched on.
-3. Your status is not **Invisible**.
+1. In Decoy the switch at the top right reads **Showing in Discord**. If it says **Show in Discord**, press it.
+2. The Discord desktop app is running on the same computer.
+3. In Discord, **User Settings**, **Activity Privacy**: sharing your activity is switched on.
+4. Your status is not **Invisible**.
 
 There is a longer checklist inside Decoy: **Guide**, then **Not showing**.
 

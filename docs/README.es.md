@@ -57,7 +57,7 @@ Son fragmentos de una ventana real de Discord, con el nombre y el avatar ocultos
 1. **Descarga Decoy** con uno de los botones de arriba y ábrelo. La primera vez, Windows o macOS pueden preguntarte si confías en él: [qué pulsar](#install).
 2. **Elige un juego.** Empieza a escribir su nombre y elígelo de la lista.
 3. **Escribe tu texto**, si quieres: dos líneas, un temporizador, un botón. La vista previa de la derecha muestra lo que verán los demás.
-4. **Activa «Showing in Discord»** (**Showing in Discord** significa «Mostrándose en Discord») arriba a la derecha. Y listo.
+4. **Pulsa «Show in Discord»** («Mostrar en Discord»). Es el botón amarillo de la franja encima del editor (o el interruptor de arriba a la derecha). Hasta que lo pulses, no aparece nada en tu perfil. Cuando funciona, el interruptor dice «Showing in Discord».
 
 Discord tiene que estar abierto en el mismo ordenador (la app, no la web). Puedes cerrar la ventana de Decoy: sigue funcionando en la bandeja, junto al reloj.
 
@@ -75,7 +75,7 @@ Discord tiene que estar abierto en el mismo ordenador (la app, no la web). Puede
 1. En Discord, abre tu servidor, haz clic en su nombre arriba y elige **Invitar gente**. Haz clic en **Edit invite link** (editar enlace de invitación), configúralo para que nunca caduque y copia el enlace.
 2. En Decoy, baja hasta **Buttons** (botones) y pulsa **Add button** (añadir botón).
 3. En **Label** (etiqueta), escribe lo que debe decir el botón, por ejemplo `Únete a mi servidor`. En **Link** (enlace), pega tu invitación.
-4. Comprueba que **Showing in Discord** está activado.
+4. Comprueba que el interruptor de arriba a la derecha dice **Showing in Discord**. Si dice **Show in Discord**, púlsalo.
 
 Es bueno saber que:
 
@@ -114,9 +114,10 @@ Decoy tiene que estar en marcha, pero puedes cerrar su ventana: se queda en la b
 Decoy funciona en un ordenador, junto a la app de escritorio de Discord. Las personas que usan el móvil sí verán tu estado.
 
 **No aparece nada en Discord. ¿Qué compruebo?**
-1. La app de escritorio de Discord está en marcha en el mismo ordenador.
-2. En Discord, en **Ajustes de usuario**, **Activity Privacy** (privacidad de la actividad): compartir tu actividad está activado.
-3. Tu estado no está en **Invisible**.
+1. En Decoy, el interruptor de arriba a la derecha dice **Showing in Discord**. Si dice **Show in Discord**, púlsalo.
+2. La app de escritorio de Discord está en marcha en el mismo ordenador.
+3. En Discord, en **Ajustes de usuario**, **Activity Privacy** (privacidad de la actividad): compartir tu actividad está activado.
+4. Tu estado no está en **Invisible**.
 
 Dentro de Decoy hay una lista de comprobación más larga: **Guide** y luego **Not showing** (no se muestra).
 
