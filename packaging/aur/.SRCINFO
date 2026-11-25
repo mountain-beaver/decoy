@@ -1,6 +1,6 @@
 pkgbase = decoy-bin
 	pkgdesc = Custom Discord Rich Presence: show any game, your own text, pictures and buttons as your Discord status
-	pkgver = 0.1.0
+	pkgver = 0.1.1
 	pkgrel = 1
 	url = https://github.com/mountain-beaver/decoy
 	arch = x86_64
@@ -10,10 +10,10 @@ pkgbase = decoy-bin
 	depends = libayatana-appindicator
 	provides = decoy
 	conflicts = decoy
-	noextract = decoy-0.1.0.deb
-	source = decoy-0.1.0.deb::https://github.com/mountain-beaver/decoy/releases/download/v0.1.0/Decoy-linux-amd64.deb
-	source = LICENSE-0.1.0::https://raw.githubusercontent.com/mountain-beaver/decoy/v0.1.0/LICENSE
-	sha256sums = 014dd611974077fc0a57254d66255678c6c77f2f11c99dc20ac07fad1ee39659
+	noextract = decoy-0.1.1.deb
+	source = decoy-0.1.1.deb::https://github.com/mountain-beaver/decoy/releases/download/v0.1.1/Decoy-linux-amd64.deb
+	source = LICENSE-0.1.1::https://raw.githubusercontent.com/mountain-beaver/decoy/v0.1.1/LICENSE
+	sha256sums = a51a357740f9ef1b27bed97b43e1dd53158ebcf2ac54ecb69a161840b29a3cbe
 	sha256sums = 1e3a9dbc8af4e2097920572f0ad4535b9f00c9eb79b3fd718c3acb369a073559
 
 pkgname = decoy-bin
